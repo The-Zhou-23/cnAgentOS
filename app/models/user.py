@@ -89,7 +89,13 @@ class UserRepository:
         with get_connection() as conn:
             total = conn.execute("select count(1) as c from users").fetchone()["c"]
             rows = conn.execute(
-                "select id, username, role_id, create_at from users order by id desc limit ? offset ?",
+                """
+                select u.id, u.username, u.role_id, u.create_at, r.name as role_name
+                from users u
+                left join roles r on u.role_id = r.id
+                order by u.id desc
+                limit ? offset ?
+                """,
                 (page_size, offset),
             ).fetchall()
         return int(total), rows

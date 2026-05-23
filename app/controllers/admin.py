@@ -137,6 +137,14 @@ class AdminRoleDeleteHandler(BaseHandler):
         self.redirect("/admin/roles")
 
 
+class AdminRolePermissionUpdateHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, role_id):
+        permission_ids = [int(i) for i in self.get_body_arguments("permission_ids")]
+        RBACRepository.set_role_permissions(int(role_id), permission_ids)
+        self.redirect("/admin/roles")
+
+
 class AdminPermissionListHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
@@ -179,11 +187,3 @@ class AdminPermissionDeleteHandler(BaseHandler):
     def post(self, permission_id):
         RBACRepository.delete_permission(int(permission_id))
         self.redirect("/admin/permissions")
-
-
-class AdminRolePermissionUpdateHandler(BaseHandler):
-    @tornado.web.authenticated
-    def post(self, role_id):
-        permission_ids = [int(i) for i in self.get_body_arguments("permission_ids")]
-        RBACRepository.set_role_permissions(int(role_id), permission_ids)
-        self.redirect("/admin/roles")

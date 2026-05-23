@@ -7,80 +7,54 @@
     <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
-    <style>
-        body {
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #0f172a 0%, #111827 45%, #1f2937 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-        }
-        .login-shell {
-            width: min(100%, 1120px);
-            display: grid;
-            grid-template-columns: 1.2fr 0.9fr;
-            gap: 24px;
-            padding: 24px;
-        }
-        .hero {
-            padding: 48px;
-            border-radius: 24px;
-            background: rgba(15, 23, 42, 0.55);
-            backdrop-filter: blur(18px);
-            box-shadow: 0 30px 80px rgba(0,0,0,.35);
-        }
-        .hero h1 { font-size: 42px; font-weight: 700; margin-bottom: 16px; }
-        .hero p { color: rgba(255,255,255,.75); line-height: 1.9; margin-bottom: 0; }
-        .login-card {
-            background: rgba(255,255,255,.96);
-            border-radius: 24px;
-            box-shadow: 0 30px 80px rgba(0,0,0,.28);
-            padding: 36px;
-            color: #1f2937;
-        }
-        .login-card .title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-        .sub { color: #6b7280; margin-bottom: 24px; }
-        .form-control:focus { box-shadow: 0 0 0 .2rem rgba(16,185,129,.15); border-color: #10b981; }
-        .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 0; }
-        .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
-        .alert { border: 0; }
-        @media (max-width: 992px) {
-            .login-shell { grid-template-columns: 1fr; }
-            .hero { display: none; }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
 </head>
 <body>
-    <div class="login-shell">
-        <section class="hero">
-            <h1>AI智能瞭望与智能问数系统</h1>
-            <p>
-                这是企业化管理后台的登录入口，采用沉浸式、自适应界面设计。
-                系统当前处于后台管理框架建设阶段，后续将持续扩展用户管理、权限管理、模型接入与数据问数能力。
+    <div class="admin-login-wrap">
+        <section class="admin-login-hero">
+            <div class="kicker"><i class="fas fa-shield-halved"></i> 企业级管理后台</div>
+            <h1 class="display-5 fw-bold mb-3">AI智能瞭望与智能问数系统</h1>
+            <p class="fs-5 text-white-50 lh-lg mb-4">
+                面向管理侧的沉浸式登录入口，采用简约、专业、自适应的后台设计风格。
+                当前默认管理员账号为 <strong>admin / admin888</strong>。
             </p>
+            <div class="row g-3 mt-4">
+                <div class="col-md-6">
+                    <div class="glass p-4 h-100">
+                        <div class="fw-semibold mb-2"><i class="fas fa-users me-2"></i>用户管理</div>
+                        <div class="text-white-50 small">支持新增、删除、修改、分页与批量管理。</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass p-4 h-100">
+                        <div class="fw-semibold mb-2"><i class="fas fa-sitemap me-2"></i>权限体系</div>
+                        <div class="text-white-50 small">支持角色、权限与菜单的统一映射。</div>
+                    </div>
+                </div>
+            </div>
         </section>
-        <section class="login-card">
-            <div class="title">管理员登录</div>
-            <div class="sub">默认管理员账号：<strong>admin / admin888</strong></div>
-            {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-            {% end %}
-            <form method="post" action="/admin/login" class="layui-form">
-                {% module xsrf_form_html() %}
-                <div class="mb-3">
-                    <label class="form-label">用户名</label>
-                    <input class="form-control form-control-lg" name="username" value="admin" placeholder="请输入管理员用户名">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">密码</label>
-                    <input class="form-control form-control-lg" type="password" name="password" value="admin888" placeholder="请输入密码">
-                </div>
-                <button type="submit" class="btn btn-primary btn-lg w-100">
-                    <i class="fas fa-right-to-bracket me-2"></i>进入管理后台
-                </button>
-            </form>
+        <section class="admin-login-card">
+            <div class="glass-strong login-panel">
+                <div class="kicker"><i class="fas fa-right-to-bracket"></i> 管理员登录</div>
+                <h2 class="fw-bold mb-2">欢迎回来</h2>
+                <div class="text-secondary mb-4">请输入管理员账号与密码进入后台。</div>
+                {% if error %}
+                <div class="alert alert-danger border-0">{{ error }}</div>
+                {% end %}
+                <form method="post" action="/admin/login">
+                    {% module xsrf_form_html() %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">用户名</label>
+                        <input class="form-control form-control-lg" name="username" value="admin" placeholder="admin">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">密码</label>
+                        <input class="form-control form-control-lg" type="password" name="password" value="admin888" placeholder="admin888">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100"><i class="fas fa-arrow-right-to-bracket me-2"></i>进入管理后台</button>
+                </form>
+                <div class="text-center text-secondary small mt-4">本地化前端组件已接入，禁止引用外部 CDN。</div>
+            </div>
         </section>
     </div>
     <script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
