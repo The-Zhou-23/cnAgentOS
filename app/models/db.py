@@ -86,9 +86,43 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS watch_sources(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                source_code TEXT NOT NULL UNIQUE,
+                entry_urls_json TEXT NOT NULL,
+                headers_json TEXT NOT NULL,
+                keywords_label TEXT NOT NULL DEFAULT '关键字',
+                page_param_name TEXT NOT NULL DEFAULT 'pn',
+                page_step INTEGER NOT NULL DEFAULT 10,
+                collect_limit INTEGER NOT NULL DEFAULT 10,
+                is_enabled INTEGER NOT NULL DEFAULT 1,
+                note TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT(datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT(datetime('now'))
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS watch_records(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_id INTEGER NOT NULL,
+                source_name TEXT NOT NULL,
+                keyword TEXT NOT NULL,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                url TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT(datetime('now'))
+            )
+            """
+        )
         _ensure_column(conn, "users", "role_id", "role_id INTEGER")
 
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
+        conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 0)", ("普通管理员", "normal_admin"))
         conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "功能管理", "system.menu", 10))
         conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "权限管理", "system.permission", 20))
         conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "角色管理", "system.role", 30))

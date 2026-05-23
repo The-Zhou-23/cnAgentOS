@@ -1,16 +1,78 @@
-{% extends "base.html" %}
-{% block body %}
-<h3>登录</h3>
-
-{% if error %}
-<div class="error">{{ error }}</div>
-{% end %}
-
-<form method="post" action="/auth/login">
-    <input name="username">
-    <input name="password">
-    <button type="submit">登录admin</button>
-    {% module xsrf_form_html() %}
-</form>
-
-{% end %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #111827 48%, #1f2937 100%);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .wrap {
+            width: min(1120px, calc(100vw - 32px));
+            display: grid;
+            grid-template-columns: 1.1fr .9fr;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0,0,0,.38);
+            background: rgba(255,255,255,.04);
+            backdrop-filter: blur(22px);
+        }
+        .hero {
+            padding: 56px;
+            background: linear-gradient(160deg, rgba(37,99,235,.38), rgba(15,23,42,.82));
+        }
+        .hero h1 { font-size: 42px; line-height: 1.15; margin-bottom: 18px; font-weight: 800; }
+        .hero p { color: rgba(255,255,255,.78); line-height: 1.9; margin: 0; max-width: 34rem; }
+        .panel {
+            background: rgba(255,255,255,.94);
+            color: #0f172a;
+            padding: 42px;
+        }
+        .title { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+        .subtitle { color: #64748b; margin-bottom: 28px; }
+        .form-control { border-radius: 14px; padding: 14px 16px; }
+        .btn-primary { border-radius: 14px; padding: 14px 16px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 0; }
+        @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .hero { display:none; } }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <section class="hero">
+            <div class="badge bg-light text-dark mb-3">企业级后台管理系统</div>
+            <h1>欢迎登录<br>cnAgentOS 管理后台</h1>
+            <p>支持普通管理员、超级管理员等多角色登录。登录成功后将进入统一后台工作台，管理用户、角色、权限、模型引擎与采集功能。</p>
+        </section>
+        <section class="panel">
+            <div class="title">管理员登录</div>
+            <div class="subtitle">请输入你的账号和密码</div>
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% end %}
+            <form method="post" action="/auth/login">
+                {% module xsrf_form_html() %}
+                <div class="mb-3">
+                    <label class="form-label">用户名</label>
+                    <input class="form-control form-control-lg" name="username" placeholder="请输入用户名">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">密码</label>
+                    <input class="form-control form-control-lg" type="password" name="password" placeholder="请输入密码">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">进入后台</button>
+            </form>
+        </section>
+    </div>
+    <script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+</body>
+</html>

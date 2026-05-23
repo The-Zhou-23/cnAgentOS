@@ -1,7 +1,8 @@
+import json
 import os
 import sqlite3
-
-import httpx
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 from app.models.db import get_connection
 
@@ -149,7 +150,9 @@ class ModelServiceRepository:
             raise ValueError("模型不存在")
         api_key = model["api_key"] or os.getenv("MODEL_API_KEY", "")
         base_url = model["base_url"] or os.getenv("MODEL_BASE_URL", "")
-        client = httpx.Client(timeout=60.0)
-        payload = {"model": model["model_name"], "messages": messages, "stream": stream}
-        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        return client, base_url, payload, headers
+        payload = json.dumps({"model": model["model_name"], "messages": messages, "stream": stream}, ensure_ascii=False).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        request = Request(f"{base_url.rstrip('/')}/chat/completions", data=payload, headers=headers, method="POST")
+        return request, stream

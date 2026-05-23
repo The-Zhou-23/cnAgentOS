@@ -112,7 +112,7 @@ class UserRepository:
             total = conn.execute("select count(1) as c from users").fetchone()["c"]
             rows = conn.execute(
                 """
-                select u.id, u.username, u.role_id, u.create_at, r.name as role_name
+                select u.id, u.username, u.role_id, u.create_at, r.name as role_name, r.code as role_code
                 from users u
                 left join roles r on u.role_id = r.id
                 order by u.id desc

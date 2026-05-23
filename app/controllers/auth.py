@@ -28,33 +28,14 @@ class LoginHandler(BaseHandler):
 		password = self.get_body_argument("password", "")
 		if not username or not password:
 			self.set_status(400)
-			# return self.write(f"""<h3>登录</h3>
-			#     用户名或密码不能为空或输入了无效数据
-			#     <form method="post" action="/auth/login">
-			#         <input name="username">
-			#         <input name="password">
-			#         <button type="submit">登录admin</button>
-			#         {self.xsrf_form_html()}
-			#     </form>
-			# """)
-			return self.render("login.html",title="登录",error="用户名或密码不能为空或输入了无效数据")
+			return self.render("login.html", title="登录", error="用户名或密码不能为空或输入了无效数据")
 
 		if not UserRepository.verify_user(username, password):
 			self.set_status(401)
-			# return self.write(f"""<h3>登录</h3>
-			#     用户名或密码错误
-			#     <form method="post" action="/auth/login">
-			#         <input name="username">
-			#         <input name="password">
-			#         <button type="submit">登录admin</button>
-			#         {self.xsrf_form_html()}
-			#     </form>
-			# """)
-			return self.render("login.html",title="登录",error="用户名或密码错误")
+			return self.render("login.html", title="登录", error="用户名或密码错误")
 
 		self.set_secure_cookie("username", username)
-		# self.write(f"登录成功, 欢迎: {username}")
-		self.redirect("/")
+		self.redirect("/admin/users")
 
 
 class LogoutHandler(BaseHandler):

@@ -7,6 +7,7 @@ from app.controllers.base import BaseHandler
 from app.models.model_service import ModelServiceRepository
 from app.models.rbac import RBACRepository
 from app.models.user import UserRepository
+from app.models.watchtower import WatchtowerRepository
 
 
 class AdminLoginHandler(BaseHandler):
@@ -16,15 +17,12 @@ class AdminLoginHandler(BaseHandler):
     def post(self):
         username = (self.get_body_argument("username", "") or "").strip()
         password = self.get_body_argument("password", "")
-
         if not username or not password:
             self.set_status(400)
             return self.render("admin/login.html", title="管理员登录", error="用户名或密码不能为空")
-
-        if username != "admin" or password != "admin888":
+        if not UserRepository.verify_user(username, password):
             self.set_status(401)
-            return self.render("admin/login.html", title="管理员登录", error="管理员账号或密码错误")
-
+            return self.render("admin/login.html", title="管理员登录", error="用户名或密码错误")
         self.set_secure_cookie("username", username)
         self.redirect("/admin/users")
 
@@ -43,19 +41,7 @@ class AdminUserListHandler(BaseHandler):
         total, users = UserRepository.list_users(page=page, page_size=page_size)
         roles = RBACRepository.list_roles()
         total_pages = max(1, math.ceil(total / page_size))
-        self.render(
-            "admin/users.html",
-            title="用户管理",
-            username=self.current_user,
-            users=users,
-            roles=roles,
-            page=page,
-            page_size=page_size,
-            total=total,
-            total_pages=total_pages,
-            has_prev=page > 1,
-            has_next=page < total_pages,
-        )
+        self.render("admin/users.html", title="用户管理", username=self.current_user, users=users, roles=roles, page=page, page_size=page_size, total=total, total_pages=total_pages, has_prev=page > 1, has_next=page < total_pages)
 
 
 class AdminUserCreateHandler(BaseHandler):
@@ -65,9 +51,8 @@ class AdminUserCreateHandler(BaseHandler):
         password = self.get_body_argument("password", "")
         role_id = self.get_body_argument("role_id", None)
         role_id = int(role_id) if role_id else None
-        if not username or not password:
-            return self.redirect("/admin/users")
-        UserRepository.create_user(username, password, role_id)
+        if username and password:
+            UserRepository.create_user(username, password, role_id)
         self.redirect("/admin/users")
 
 
@@ -90,12 +75,9 @@ class AdminUserUpdateHandler(BaseHandler):
 class AdminUserDeleteHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self, user_id):
-        user_id = int(user_id)
-        user = UserRepository.get_user_by_id(user_id)
-        if user and user["username"] == "admin":
-            self.redirect("/admin/users")
-            return
-        UserRepository.delete_user(user_id)
+        user = UserRepository.get_user_by_id(int(user_id))
+        if not (user and user["username"] == "admin"):
+            UserRepository.delete_user(int(user_id))
         self.redirect("/admin/users")
 
 
@@ -112,20 +94,23 @@ class AdminUserBatchDeleteHandler(BaseHandler):
         self.redirect("/admin/users")
 
 
+class AdminUserResetPasswordHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, user_id):
+        user_id = int(user_id)
+        password = (self.get_body_argument("password", "") or "").strip()
+        if password:
+            UserRepository.update_user_password_only(user_id, password)
+        self.redirect("/admin/users")
+
+
 class AdminRoleListHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         roles = RBACRepository.list_roles()
         permissions = RBACRepository.list_permissions()
         role_permissions = {role["id"]: RBACRepository.get_role_permissions(role["id"]) for role in roles}
-        self.render(
-            "admin/roles.html",
-            title="角色管理",
-            username=self.current_user,
-            roles=roles,
-            permissions=permissions,
-            role_permissions=role_permissions,
-        )
+        self.render("admin/roles.html", title="角色管理", username=self.current_user, roles=roles, permissions=permissions, role_permissions=role_permissions)
 
 
 class AdminRoleCreateHandler(BaseHandler):
@@ -141,9 +126,7 @@ class AdminRoleCreateHandler(BaseHandler):
 class AdminRoleUpdateHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self, role_id):
-        name = (self.get_body_argument("name", "") or "").strip()
-        code = (self.get_body_argument("code", "") or "").strip()
-        RBACRepository.update_role(int(role_id), name, code)
+        RBACRepository.update_role(int(role_id), (self.get_body_argument("name", "") or "").strip(), (self.get_body_argument("code", "") or "").strip())
         self.redirect("/admin/roles")
 
 
@@ -167,13 +150,7 @@ class AdminPermissionListHandler(BaseHandler):
     def get(self):
         permissions = RBACRepository.list_permissions()
         roles = RBACRepository.list_roles()
-        self.render(
-            "admin/permissions.html",
-            title="权限管理",
-            username=self.current_user,
-            permissions=permissions,
-            roles=roles,
-        )
+        self.render("admin/permissions.html", title="权限管理", username=self.current_user, permissions=permissions, roles=roles)
 
 
 class AdminPermissionCreateHandler(BaseHandler):
@@ -191,11 +168,7 @@ class AdminPermissionCreateHandler(BaseHandler):
 class AdminPermissionUpdateHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self, permission_id):
-        menu_group = (self.get_body_argument("menu_group", "") or "").strip()
-        name = (self.get_body_argument("name", "") or "").strip()
-        code = (self.get_body_argument("code", "") or "").strip()
-        sort_no = int(self.get_body_argument("sort_no", 0) or 0)
-        RBACRepository.update_permission(int(permission_id), menu_group, name, code, sort_no)
+        RBACRepository.update_permission(int(permission_id), (self.get_body_argument("menu_group", "") or "").strip(), (self.get_body_argument("name", "") or "").strip(), (self.get_body_argument("code", "") or "").strip(), int(self.get_body_argument("sort_no", 0) or 0))
         self.redirect("/admin/permissions")
 
 
@@ -212,17 +185,7 @@ class AdminModelListHandler(BaseHandler):
         page = max(1, int(self.get_argument("page", 1)))
         total, models = ModelServiceRepository.list_models(page=page, page_size=6)
         total_pages = max(1, math.ceil(total / 6))
-        self.render(
-            "admin/models.html",
-            title="模型引擎",
-            username=self.current_user,
-            models=models,
-            page=page,
-            total=total,
-            total_pages=total_pages,
-            has_prev=page > 1,
-            has_next=page < total_pages,
-        )
+        self.render("admin/models.html", title="模型引擎", username=self.current_user, models=models, page=page, total=total, total_pages=total_pages, has_prev=page > 1, has_next=page < total_pages)
 
 
 class AdminModelCreateHandler(BaseHandler):
@@ -255,3 +218,99 @@ class AdminModelSystemHandler(BaseHandler):
     def post(self, model_id):
         ModelServiceRepository.set_system_model(int(model_id))
         self.redirect("/admin/models")
+
+
+class AdminWatchSourceListHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        sources = WatchtowerRepository.list_sources()
+        self.render("admin/watch_sources.html", title="瞭望数据源管理", username=self.current_user, sources=sources)
+
+
+class AdminWatchSourceCreateHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        entry_urls = self.get_body_arguments("entry_urls")
+        headers_json = self.get_body_argument("headers_json", "{}")
+        headers = json.loads(headers_json or "{}")
+        data = {
+            "name": self.get_body_argument("name", "").strip(),
+            "source_code": self.get_body_argument("source_code", "").strip(),
+            "entry_urls": [u for u in entry_urls if u.strip()],
+            "headers": headers,
+            "keywords_label": self.get_body_argument("keywords_label", "关键字").strip(),
+            "page_param_name": self.get_body_argument("page_param_name", "pn").strip(),
+            "page_step": int(self.get_body_argument("page_step", 10) or 10),
+            "collect_limit": int(self.get_body_argument("collect_limit", 10) or 10),
+            "is_enabled": 1 if self.get_body_argument("is_enabled", "1") == "1" else 0,
+            "note": self.get_body_argument("note", "").strip(),
+        }
+        if data["name"] and data["source_code"]:
+            WatchtowerRepository.create_source(data)
+        self.redirect("/admin/watch-sources")
+
+
+class AdminWatchSourceUpdateHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, source_id):
+        entry_urls = self.get_body_arguments("entry_urls")
+        headers_json = self.get_body_argument("headers_json", "{}")
+        headers = json.loads(headers_json or "{}")
+        data = {
+            "name": self.get_body_argument("name", "").strip(),
+            "source_code": self.get_body_argument("source_code", "").strip(),
+            "entry_urls": [u for u in entry_urls if u.strip()],
+            "headers": headers,
+            "keywords_label": self.get_body_argument("keywords_label", "关键字").strip(),
+            "page_param_name": self.get_body_argument("page_param_name", "pn").strip(),
+            "page_step": int(self.get_body_argument("page_step", 10) or 10),
+            "collect_limit": int(self.get_body_argument("collect_limit", 10) or 10),
+            "is_enabled": 1 if self.get_body_argument("is_enabled", "1") == "1" else 0,
+            "note": self.get_body_argument("note", "").strip(),
+        }
+        WatchtowerRepository.update_source(int(source_id), data)
+        self.redirect("/admin/watch-sources")
+
+
+class AdminWatchSourceDeleteHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, source_id):
+        WatchtowerRepository.delete_source(int(source_id))
+        self.redirect("/admin/watch-sources")
+
+
+class AdminWatchCollectHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        source_id = int(self.get_body_argument("source_id"))
+        keyword = (self.get_body_argument("keyword", "") or "").strip()
+        page_count = int(self.get_body_argument("page_count", 1) or 1)
+        item_count = int(self.get_body_argument("item_count", 1) or 1)
+        records = WatchtowerRepository.collect(source_id, keyword, page_count, item_count)
+        WatchtowerRepository.save_records(records)
+        self.redirect("/admin/watch-records")
+
+
+class AdminWatchRecordListHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        page = max(1, int(self.get_argument("page", 1)))
+        total, records = WatchtowerRepository.list_records(page=page, page_size=20)
+        total_pages = max(1, math.ceil(total / 20))
+        sources = WatchtowerRepository.list_sources()
+        self.render("admin/watch_records.html", title="数据仓库", username=self.current_user, records=records, sources=sources, page=page, total=total, total_pages=total_pages, has_prev=page > 1, has_next=page < total_pages)
+
+
+class AdminWatchRecordDeleteHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, record_id):
+        WatchtowerRepository.delete_record(int(record_id))
+        self.redirect("/admin/watch-records")
+
+
+class AdminWatchRecordBatchDeleteHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        ids = [int(i) for i in self.get_body_arguments("record_ids")]
+        WatchtowerRepository.batch_delete_records(ids)
+        self.redirect("/admin/watch-records")

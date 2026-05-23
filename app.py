@@ -26,6 +26,14 @@ from app.controllers.admin import (
     AdminUserDeleteHandler,
     AdminUserListHandler,
     AdminUserUpdateHandler,
+    AdminWatchCollectHandler,
+    AdminWatchRecordBatchDeleteHandler,
+    AdminWatchRecordDeleteHandler,
+    AdminWatchRecordListHandler,
+    AdminWatchSourceCreateHandler,
+    AdminWatchSourceDeleteHandler,
+    AdminWatchSourceListHandler,
+    AdminWatchSourceUpdateHandler,
 )
 from app.controllers.auth import LoginHandler, LogoutHandler
 from app.controllers.home import IndexHandler
@@ -70,6 +78,14 @@ def make_app():
             (r"/admin/models/update/(\d+)", AdminModelUpdateHandler),
             (r"/admin/models/delete/(\d+)", AdminModelDeleteHandler),
             (r"/admin/models/system/(\d+)", AdminModelSystemHandler),
+            (r"/admin/watch-sources", AdminWatchSourceListHandler),
+            (r"/admin/watch-sources/create", AdminWatchSourceCreateHandler),
+            (r"/admin/watch-sources/update/(\d+)", AdminWatchSourceUpdateHandler),
+            (r"/admin/watch-sources/delete/(\d+)", AdminWatchSourceDeleteHandler),
+            (r"/admin/watch-collect", AdminWatchCollectHandler),
+            (r"/admin/watch-records", AdminWatchRecordListHandler),
+            (r"/admin/watch-records/delete/(\d+)", AdminWatchRecordDeleteHandler),
+            (r"/admin/watch-records/batch-delete", AdminWatchRecordBatchDeleteHandler),
         ],
         **settings,
     )
@@ -80,7 +96,7 @@ if __name__ == "__main__":
     ModelServiceRepository.ensure_default_model()
     app = make_app()
     server = HTTPServer(app)
-    server.bind(10086)
+    server.bind(10087)
     server.start()
-    print("====== Server 启动成功 ======== 端口：10086 ======")
+    print("====== Server 启动成功 ======== 端口：10087 ======")
     tornado.ioloop.IOLoop.current().start()
