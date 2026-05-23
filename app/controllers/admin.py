@@ -72,18 +72,28 @@ class AdminUserCreateHandler(BaseHandler):
 class AdminUserUpdateHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self, user_id):
+        user_id = int(user_id)
         username = (self.get_body_argument("username", "") or "").strip()
         password = self.get_body_argument("password", "")
         role_id = self.get_body_argument("role_id", None)
         role_id = int(role_id) if role_id else None
-        UserRepository.update_user(int(user_id), username, password or None, role_id)
+        user = UserRepository.get_user_by_id(user_id)
+        if user and user["username"] == "admin":
+            UserRepository.update_user_password_only(user_id, password)
+        else:
+            UserRepository.update_user(user_id, username, password or None, role_id)
         self.redirect("/admin/users")
 
 
 class AdminUserDeleteHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self, user_id):
-        UserRepository.delete_user(int(user_id))
+        user_id = int(user_id)
+        user = UserRepository.get_user_by_id(user_id)
+        if user and user["username"] == "admin":
+            self.redirect("/admin/users")
+            return
+        UserRepository.delete_user(user_id)
         self.redirect("/admin/users")
 
 
@@ -91,7 +101,12 @@ class AdminUserBatchDeleteHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self):
         ids = self.get_body_arguments("user_ids")
-        UserRepository.batch_delete_users([int(i) for i in ids])
+        filtered_ids = []
+        for raw_id in ids:
+            user = UserRepository.get_user_by_id(int(raw_id))
+            if user and user["username"] != "admin":
+                filtered_ids.append(int(raw_id))
+        UserRepository.batch_delete_users(filtered_ids)
         self.redirect("/admin/users")
 
 

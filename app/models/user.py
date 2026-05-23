@@ -47,6 +47,19 @@ class UserRepository:
             return False
 
     @staticmethod
+    def update_user_password_only(user_id: int, password: str) -> bool:
+        if not password:
+            return False
+        salt = secrets.token_bytes(16)
+        password_hash = _hash_password(password, salt)
+        with get_connection() as conn:
+            conn.execute(
+                "update users set password_hash = ?, salt = ? where id = ?",
+                (password_hash, salt.hex(), user_id),
+            )
+        return True
+
+    @staticmethod
     def delete_user(user_id: int) -> None:
         with get_connection() as conn:
             conn.execute("delete from users where id = ?", (user_id,))
@@ -65,6 +78,15 @@ class UserRepository:
             row = conn.execute(
                 "select id, username, password_hash, salt, role_id from users where username = ?",
                 (username,),
+            ).fetchone()
+        return row
+
+    @staticmethod
+    def get_user_by_id(user_id: int):
+        with get_connection() as conn:
+            row = conn.execute(
+                "select id, username, password_hash, salt, role_id from users where id = ?",
+                (user_id,),
             ).fetchone()
         return row
 

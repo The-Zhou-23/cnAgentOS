@@ -85,12 +85,21 @@
                         <tbody>
                             {% for user in users %}
                             <tr>
-                                <td><input type="checkbox" name="user_ids" value="{{ user['id'] }}"></td>
+                                <td><input type="checkbox" name="user_ids" value="{{ user['id'] }}" {% if user['username'] == 'admin' %}disabled{% end %}></td>
                                 <td class="text-secondary">#{{ user['id'] }}</td>
                                 <td class="fw-semibold">{{ user['username'] }}</td>
                                 <td><span class="badge-soft">{% if user['role_name'] %}{{ user['role_name'] }}{% else %}未分配{% end %}</span></td>
                                 <td class="text-secondary">{{ user['create_at'] }}</td>
                                 <td>
+                                    {% if user['username'] == 'admin' %}
+                                    <form action="/admin/users/update/{{ user['id'] }}" method="post" class="row g-2 align-items-center">
+                                        {% module xsrf_form_html() %}
+                                        <div class="col-md-6"><input class="form-control form-control-sm" name="username" value="{{ user['username'] }}" readonly></div>
+                                        <div class="col-md-4"><input class="form-control form-control-sm" type="password" name="password" placeholder="仅可修改密码"></div>
+                                        <div class="col-md-2 d-grid"><button class="btn btn-sm btn-outline-primary">改密码</button></div>
+                                    </form>
+                                    <div class="mt-2 text-muted small">系统默认用户：仅允许修改密码，不允许修改用户名和角色，也不允许删除</div>
+                                    {% else %}
                                     <form action="/admin/users/update/{{ user['id'] }}" method="post" class="row g-2 align-items-center">
                                         {% module xsrf_form_html() %}
                                         <div class="col-md-4"><input class="form-control form-control-sm" name="username" value="{{ user['username'] }}"></div>
@@ -109,6 +118,7 @@
                                         {% module xsrf_form_html() %}
                                         <button class="btn btn-sm btn-outline-danger">删除</button>
                                     </form>
+                                    {% end %}
                                 </td>
                             </tr>
                             {% end %}
@@ -128,7 +138,7 @@
 </div>
 <script>
 const checkAll = document.getElementById('checkAll');
-checkAll?.addEventListener('change', () => document.querySelectorAll('input[name="user_ids"]').forEach(cb => cb.checked = checkAll.checked));
+checkAll?.addEventListener('change', () => document.querySelectorAll('input[name="user_ids"]:not(:disabled)').forEach(cb => cb.checked = checkAll.checked));
 </script>
 <script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
 </body>
