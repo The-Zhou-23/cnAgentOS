@@ -81,6 +81,15 @@ class AdminUserDeleteHandler(BaseHandler):
         self.redirect("/admin/users")
 
 
+class AdminUserResetPasswordHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, user_id):
+        password = (self.get_body_argument("password", "") or "").strip()
+        if password:
+            UserRepository.update_user_password_only(int(user_id), password)
+        self.redirect("/admin/users")
+
+
 class AdminUserBatchDeleteHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self):

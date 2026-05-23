@@ -102,8 +102,7 @@
                                     <form action="/admin/users/update/{{ user['id'] }}" method="post" class="row g-2 align-items-center">
                                         {% module xsrf_form_html() %}
                                         <div class="col-md-4"><input class="form-control form-control-sm" name="username" value="{{ user['username'] }}"></div>
-                                        <div class="col-md-3"><input class="form-control form-control-sm" type="password" name="password" placeholder="新密码"></div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-5">
                                             <select class="form-select form-select-sm" name="role_id">
                                                 <option value="">角色</option>
                                                 {% for role in roles %}
@@ -111,13 +110,18 @@
                                                 {% end %}
                                             </select>
                                         </div>
-                                        <div class="col-md-2 d-grid"><button class="btn btn-sm btn-outline-primary">保存</button></div>
+                                        <div class="col-md-3 d-grid"><button class="btn btn-sm btn-outline-primary">保存</button></div>
                                     </form>
-                                    <form action="/admin/users/reset-password/{{ user['id'] }}" method="post" class="row g-2 align-items-center mt-2">
-                                        {% module xsrf_form_html() %}
-                                        <div class="col-md-9"><input class="form-control form-control-sm" type="password" name="password" placeholder="重置密码"></div>
-                                        <div class="col-md-3 d-grid"><button class="btn btn-sm btn-outline-secondary">重置密码</button></div>
-                                    </form>
+                                    <div class="row g-2 align-items-center mt-2">
+                                        <div class="col-md-9"><span class="text-muted small">如需修改密码，请使用右侧“重置密码”</span></div>
+                                        <div class="col-md-3 d-grid">
+                                            <form action="/admin/users/reset-password/{{ user['id'] }}" method="post">
+                                                {% module xsrf_form_html() %}
+                                                <input class="form-control form-control-sm mb-2" type="password" name="password" placeholder="重置密码">
+                                                <button class="btn btn-sm btn-outline-secondary w-100">重置密码</button>
+                                            </form>
+                                        </div>
+                                    </div>
                                     <form action="/admin/users/delete/{{ user['id'] }}" method="post" class="mt-2" onsubmit="return confirm('确认删除用户？')">
                                         {% module xsrf_form_html() %}
                                         <button class="btn btn-sm btn-outline-danger">删除</button>
