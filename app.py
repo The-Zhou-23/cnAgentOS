@@ -4,17 +4,26 @@ import tornado.ioloop
 import tornado.web
 from tornado.httpserver import HTTPServer
 
-from app.controllers.auth import LoginHandler, LogoutHandler
-from app.controllers.home import IndexHandler
 from app.controllers.admin import (
     AdminLoginHandler,
     AdminLogoutHandler,
-    AdminUserListHandler,
-    AdminUserCreateHandler,
-    AdminUserUpdateHandler,
-    AdminUserDeleteHandler,
+    AdminPermissionCreateHandler,
+    AdminPermissionDeleteHandler,
+    AdminPermissionListHandler,
+    AdminPermissionUpdateHandler,
+    AdminRoleCreateHandler,
+    AdminRoleDeleteHandler,
+    AdminRoleListHandler,
+    AdminRolePermissionUpdateHandler,
+    AdminRoleUpdateHandler,
     AdminUserBatchDeleteHandler,
+    AdminUserCreateHandler,
+    AdminUserDeleteHandler,
+    AdminUserListHandler,
+    AdminUserUpdateHandler,
 )
+from app.controllers.auth import LoginHandler, LogoutHandler
+from app.controllers.home import IndexHandler
 from app.models.db import init_db
 
 
@@ -41,6 +50,15 @@ def make_app():
             (r"/admin/users/update/(\d+)", AdminUserUpdateHandler),
             (r"/admin/users/delete/(\d+)", AdminUserDeleteHandler),
             (r"/admin/users/batch-delete", AdminUserBatchDeleteHandler),
+            (r"/admin/roles", AdminRoleListHandler),
+            (r"/admin/roles/create", AdminRoleCreateHandler),
+            (r"/admin/roles/update/(\d+)", AdminRoleUpdateHandler),
+            (r"/admin/roles/delete/(\d+)", AdminRoleDeleteHandler),
+            (r"/admin/roles/permissions/(\d+)", AdminRolePermissionUpdateHandler),
+            (r"/admin/permissions", AdminPermissionListHandler),
+            (r"/admin/permissions/create", AdminPermissionCreateHandler),
+            (r"/admin/permissions/update/(\d+)", AdminPermissionUpdateHandler),
+            (r"/admin/permissions/delete/(\d+)", AdminPermissionDeleteHandler),
         ],
         **settings,
     )

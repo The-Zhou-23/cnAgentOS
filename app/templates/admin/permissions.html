@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
+</head>
+<body class="bg-light">
+<div class="container-fluid py-3">
+    <div class="row">
+        <div class="col-2">
+            <div class="list-group">
+                <a class="list-group-item list-group-item-action" href="/admin/users">用户管理</a>
+                <a class="list-group-item list-group-item-action" href="/admin/roles">角色管理</a>
+                <a class="list-group-item list-group-item-action active" href="/admin/permissions">权限管理</a>
+            </div>
+        </div>
+        <div class="col-10">
+            <h3>权限管理</h3>
+            <form action="/admin/permissions/create" method="post" class="row g-2 mb-3">
+                {% module xsrf_form_html() %}
+                <div class="col-md-2"><input class="form-control" name="menu_group" placeholder="菜单分组"></div>
+                <div class="col-md-3"><input class="form-control" name="name" placeholder="权限名称"></div>
+                <div class="col-md-3"><input class="form-control" name="code" placeholder="权限编码"></div>
+                <div class="col-md-2"><input class="form-control" name="sort_no" placeholder="排序"></div>
+                <div class="col-md-2"><button class="btn btn-primary">新增权限</button></div>
+            </form>
+            <table class="table table-bordered bg-white">
+                <thead><tr><th>ID</th><th>分组</th><th>名称</th><th>编码</th><th>排序</th><th>操作</th></tr></thead>
+                <tbody>
+                {% for p in permissions %}
+                <tr>
+                    <td>{{ p['id'] }}</td>
+                    <td>{{ p['menu_group'] }}</td>
+                    <td>{{ p['name'] }}</td>
+                    <td>{{ p['code'] }}</td>
+                    <td>{{ p['sort_no'] }}</td>
+                    <td>
+                        <form action="/admin/permissions/update/{{ p['id'] }}" method="post" class="d-inline">
+                            {% module xsrf_form_html() %}
+                            <input type="hidden" name="menu_group" value="{{ p['menu_group'] }}">
+                            <input type="hidden" name="name" value="{{ p['name'] }}">
+                            <input type="hidden" name="code" value="{{ p['code'] }}">
+                            <input type="hidden" name="sort_no" value="{{ p['sort_no'] }}">
+                            <button class="btn btn-sm btn-outline-secondary">修改</button>
+                        </form>
+                        <form action="/admin/permissions/delete/{{ p['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除权限？')">
+                            {% module xsrf_form_html() %}
+                            <button class="btn btn-sm btn-outline-danger">删除</button>
+                        </form>
+                    </td>
+                </tr>
+                {% end %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+</body>
+</html>

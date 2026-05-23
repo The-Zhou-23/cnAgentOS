@@ -12,35 +12,35 @@ def _hash_password(password: str, salt: bytes) -> str:
 
 class UserRepository:
     @staticmethod
-    def create_user(username: str, password: str) -> bool:
+    def create_user(username: str, password: str, role_id: int | None = None) -> bool:
         salt = secrets.token_bytes(16)
         password_hash = _hash_password(password, salt)
 
         try:
             with get_connection() as conn:
                 conn.execute(
-                    "insert into users(username,password_hash,salt) values(?,?,?)",
-                    (username, password_hash, salt.hex()),
+                    "insert into users(username,password_hash,salt,role_id) values(?,?,?,?)",
+                    (username, password_hash, salt.hex(), role_id),
                 )
             return True
         except sqlite3.IntegrityError:
             return False
 
     @staticmethod
-    def update_user(user_id: int, username: str, password: str | None = None) -> bool:
+    def update_user(user_id: int, username: str, password: str | None = None, role_id: int | None = None) -> bool:
         try:
             with get_connection() as conn:
                 if password:
                     salt = secrets.token_bytes(16)
                     password_hash = _hash_password(password, salt)
                     conn.execute(
-                        "update users set username = ?, password_hash = ?, salt = ? where id = ?",
-                        (username, password_hash, salt.hex(), user_id),
+                        "update users set username = ?, password_hash = ?, salt = ?, role_id = ? where id = ?",
+                        (username, password_hash, salt.hex(), role_id, user_id),
                     )
                 else:
                     conn.execute(
-                        "update users set username = ? where id = ?",
-                        (username, user_id),
+                        "update users set username = ?, role_id = ? where id = ?",
+                        (username, role_id, user_id),
                     )
             return True
         except sqlite3.IntegrityError:
@@ -63,7 +63,7 @@ class UserRepository:
     def get_user_by_username(username: str):
         with get_connection() as conn:
             row = conn.execute(
-                "select id, username, password_hash, salt from users where username = ?",
+                "select id, username, password_hash, salt, role_id from users where username = ?",
                 (username,),
             ).fetchone()
         return row
@@ -89,7 +89,7 @@ class UserRepository:
         with get_connection() as conn:
             total = conn.execute("select count(1) as c from users").fetchone()["c"]
             rows = conn.execute(
-                "select id, username, create_at from users order by id desc limit ? offset ?",
+                "select id, username, role_id, create_at from users order by id desc limit ? offset ?",
                 (page_size, offset),
             ).fetchall()
         return int(total), rows

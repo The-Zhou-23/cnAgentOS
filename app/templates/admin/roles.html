@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
+</head>
+<body class="bg-light">
+<div class="container-fluid py-3">
+    <div class="row">
+        <div class="col-2">
+            <div class="list-group">
+                <a class="list-group-item list-group-item-action" href="/admin/users">用户管理</a>
+                <a class="list-group-item list-group-item-action active" href="/admin/roles">角色管理</a>
+                <a class="list-group-item list-group-item-action" href="/admin/permissions">权限管理</a>
+            </div>
+        </div>
+        <div class="col-10">
+            <h3>角色管理</h3>
+            <div class="alert alert-info">超级管理员角色不可修改和删除</div>
+            <form action="/admin/roles/create" method="post" class="row g-2 mb-3">
+                {% module xsrf_form_html() %}
+                <div class="col-md-3"><input class="form-control" name="name" placeholder="角色名称"></div>
+                <div class="col-md-3"><input class="form-control" name="code" placeholder="角色编码"></div>
+                <div class="col-md-2"><button class="btn btn-primary">新增角色</button></div>
+            </form>
+            <table class="table table-bordered bg-white">
+                <thead><tr><th>ID</th><th>名称</th><th>编码</th><th>系统角色</th><th>权限勾选</th><th>操作</th></tr></thead>
+                <tbody>
+                {% for role in roles %}
+                <tr>
+                    <td>{{ role['id'] }}</td>
+                    <td>{{ role['name'] }}</td>
+                    <td>{{ role['code'] }}</td>
+                    <td>{% if role['is_system'] %}是{% else %}否{% end %}</td>
+                    <td>
+                        <form action="/admin/roles/permissions/{{ role['id'] }}" method="post" class="d-flex flex-wrap gap-2">
+                            {% module xsrf_form_html() %}
+                            {% for p in permissions %}
+                            <label class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="permission_ids" value="{{ p['id'] }}" {% if p['id'] in role_permissions[role['id']] %}checked{% end %}>
+                                <span class="form-check-label">{{ p['name'] }}</span>
+                            </label>
+                            {% end %}
+                            <button class="btn btn-sm btn-outline-primary">保存权限</button>
+                        </form>
+                    </td>
+                    <td>
+                        {% if not role['is_system'] %}
+                        <form action="/admin/roles/update/{{ role['id'] }}" method="post" class="d-inline">
+                            {% module xsrf_form_html() %}
+                            <input type="hidden" name="name" value="{{ role['name'] }}">
+                            <input type="hidden" name="code" value="{{ role['code'] }}">
+                            <button class="btn btn-sm btn-outline-secondary">修改</button>
+                        </form>
+                        <form action="/admin/roles/delete/{{ role['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除角色？')">
+                            {% module xsrf_form_html() %}
+                            <button class="btn btn-sm btn-outline-danger">删除</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">系统默认角色</span>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+</body>
+</html>
