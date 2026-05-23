@@ -69,24 +69,27 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS model_services(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                model_name TEXT NOT NULL,
+                base_url TEXT NOT NULL,
+                api_key TEXT NOT NULL DEFAULT '',
+                is_system INTEGER NOT NULL DEFAULT 0,
+                token_total INTEGER NOT NULL DEFAULT 0,
+                token_today INTEGER NOT NULL DEFAULT 0,
+                conversation_prompt TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT(datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT(datetime('now'))
+            )
+            """
+        )
         _ensure_column(conn, "users", "role_id", "role_id INTEGER")
 
-        conn.execute(
-            "INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)",
-            ("超级管理员", "super_admin"),
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)",
-            ("系统管理", "功能管理", "system.menu", 10),
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)",
-            ("系统管理", "权限管理", "system.permission", 20),
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)",
-            ("系统管理", "角色管理", "system.role", 30),
-        )
-        conn.execute(
-            "UPDATE users SET role_id = (SELECT id FROM roles WHERE code = 'super_admin') WHERE username = 'admin'"
-        )
+        conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
+        conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "功能管理", "system.menu", 10))
+        conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "权限管理", "system.permission", 20))
+        conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "角色管理", "system.role", 30))
+        conn.execute("UPDATE users SET role_id = (SELECT id FROM roles WHERE code = 'super_admin') WHERE username = 'admin'")

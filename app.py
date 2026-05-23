@@ -7,6 +7,11 @@ from tornado.httpserver import HTTPServer
 from app.controllers.admin import (
     AdminLoginHandler,
     AdminLogoutHandler,
+    AdminModelCreateHandler,
+    AdminModelDeleteHandler,
+    AdminModelListHandler,
+    AdminModelSystemHandler,
+    AdminModelUpdateHandler,
     AdminPermissionCreateHandler,
     AdminPermissionDeleteHandler,
     AdminPermissionListHandler,
@@ -25,6 +30,7 @@ from app.controllers.admin import (
 from app.controllers.auth import LoginHandler, LogoutHandler
 from app.controllers.home import IndexHandler
 from app.models.db import init_db
+from app.models.model_service import ModelServiceRepository
 
 
 def make_app():
@@ -59,6 +65,11 @@ def make_app():
             (r"/admin/permissions/create", AdminPermissionCreateHandler),
             (r"/admin/permissions/update/(\d+)", AdminPermissionUpdateHandler),
             (r"/admin/permissions/delete/(\d+)", AdminPermissionDeleteHandler),
+            (r"/admin/models", AdminModelListHandler),
+            (r"/admin/models/create", AdminModelCreateHandler),
+            (r"/admin/models/update/(\d+)", AdminModelUpdateHandler),
+            (r"/admin/models/delete/(\d+)", AdminModelDeleteHandler),
+            (r"/admin/models/system/(\d+)", AdminModelSystemHandler),
         ],
         **settings,
     )
@@ -66,6 +77,7 @@ def make_app():
 
 if __name__ == "__main__":
     init_db()
+    ModelServiceRepository.ensure_default_model()
     app = make_app()
     server = HTTPServer(app)
     server.bind(10086)

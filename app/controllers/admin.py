@@ -1,8 +1,10 @@
+import json
 import math
 
 import tornado.web
 
 from app.controllers.base import BaseHandler
+from app.models.model_service import ModelServiceRepository
 from app.models.rbac import RBACRepository
 from app.models.user import UserRepository
 
@@ -202,3 +204,54 @@ class AdminPermissionDeleteHandler(BaseHandler):
     def post(self, permission_id):
         RBACRepository.delete_permission(int(permission_id))
         self.redirect("/admin/permissions")
+
+
+class AdminModelListHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        page = max(1, int(self.get_argument("page", 1)))
+        total, models = ModelServiceRepository.list_models(page=page, page_size=6)
+        total_pages = max(1, math.ceil(total / 6))
+        self.render(
+            "admin/models.html",
+            title="模型引擎",
+            username=self.current_user,
+            models=models,
+            page=page,
+            total=total,
+            total_pages=total_pages,
+            has_prev=page > 1,
+            has_next=page < total_pages,
+        )
+
+
+class AdminModelCreateHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        data = {k: self.get_body_argument(k, "") for k in ["name", "model_name", "base_url", "api_key", "conversation_prompt"]}
+        data["is_system"] = 1 if self.get_body_argument("is_system", "0") == "1" else 0
+        ModelServiceRepository.create_model(data)
+        self.redirect("/admin/models")
+
+
+class AdminModelUpdateHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, model_id):
+        data = {k: self.get_body_argument(k, "") for k in ["name", "model_name", "base_url", "api_key", "conversation_prompt"]}
+        data["is_system"] = 1 if self.get_body_argument("is_system", "0") == "1" else 0
+        ModelServiceRepository.update_model(int(model_id), data)
+        self.redirect("/admin/models")
+
+
+class AdminModelDeleteHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, model_id):
+        ModelServiceRepository.delete_model(int(model_id))
+        self.redirect("/admin/models")
+
+
+class AdminModelSystemHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, model_id):
+        ModelServiceRepository.set_system_model(int(model_id))
+        self.redirect("/admin/models")

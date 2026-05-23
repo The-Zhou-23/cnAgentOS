@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
+    <style>
+        .model-hero { padding: 28px; margin-bottom: 22px; }
+        .model-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+        .model-card { padding: 20px; min-height: 320px; position: relative; overflow:hidden; }
+        .model-card::before {
+            content:""; position:absolute; inset:auto -40px -40px auto; width:160px; height:160px; border-radius:50%;
+            background: radial-gradient(circle, rgba(37,99,235,.12), transparent 70%);
+        }
+        .model-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+        .model-sub { color: var(--muted); font-size: 13px; }
+        .metric { font-size: 30px; font-weight: 800; line-height: 1; }
+        @media (max-width: 992px) { .model-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="admin-shell">
+<div class="page-shell">
+    <aside class="sidebar">
+        <div class="brand"><strong>cnAgentOS</strong><span>AI 智能瞭望与智能问数系统</span></div>
+        <div class="nav-card">
+            <a href="/admin/users"><i class="fas fa-users"></i>用户管理</a>
+            <a href="/admin/roles"><i class="fas fa-user-shield"></i>角色管理</a>
+            <a href="/admin/permissions"><i class="fas fa-sitemap"></i>权限管理</a>
+            <a class="active" href="/admin/models"><i class="fas fa-cubes"></i>模型引擎</a>
+        </div>
+        <form action="/admin/logout" method="post" class="mt-4">{% module xsrf_form_html() %}<button class="btn btn-light w-100">退出登录</button></form>
+    </aside>
+    <main class="main">
+        <div class="glass-strong model-hero">
+            <div class="topbar mb-0">
+                <div>
+                    <h1 class="title-large">模型引擎</h1>
+                    <div class="subtitle">支持橱窗式展示、系统默认模型、对话测试、SSE 流式响应与 token 统计</div>
+                </div>
+                <div class="badge-soft"><i class="fas fa-bolt me-2"></i>优先调用系统模式模型</div>
+            </div>
+        </div>
+
+        <div class="glass-strong card-soft mb-4">
+            <form action="/admin/models/create" method="post" class="row g-3">
+                {% module xsrf_form_html() %}
+                <div class="col-md-4"><input class="form-control" name="name" placeholder="模型服务名称"></div>
+                <div class="col-md-4"><input class="form-control" name="model_name" placeholder="模型名称，如 deepseek-v3"></div>
+                <div class="col-md-4"><input class="form-control" name="base_url" placeholder="OpenAI API Base URL"></div>
+                <div class="col-md-4"><input class="form-control" name="api_key" placeholder="API Key（本地填写，不写入仓库）"></div>
+                <div class="col-md-4"><input class="form-control" name="conversation_prompt" placeholder="系统提示词"></div>
+                <div class="col-md-2"><label class="form-check-label"><input class="form-check-input me-2" type="checkbox" name="is_system" value="1">系统模式</label></div>
+                <div class="col-md-2 d-grid"><button class="btn btn-primary">新增模型</button></div>
+            </form>
+        </div>
+
+        <div class="model-grid">
+            {% for model in models %}
+            <div class="glass-strong model-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="model-title">{{ model['name'] }}</div>
+                        <div class="model-sub">{{ model['model_name'] }}</div>
+                    </div>
+                    {% if model['is_system'] %}<span class="badge-soft">系统默认</span>{% end %}
+                </div>
+                <div class="mb-3"><span class="badge-soft">{{ model['base_url'] }}</span></div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><div class="glass p-3"><div class="model-sub">总 Token</div><div class="metric">{{ model['token_total'] }}</div></div></div>
+                    <div class="col-6"><div class="glass p-3"><div class="model-sub">今日 Token</div><div class="metric">{{ model['token_today'] }}</div></div></div>
+                </div>
+                <div class="d-grid gap-2">
+                    <form action="/admin/models/system/{{ model['id'] }}" method="post">{% module xsrf_form_html() %}<button class="btn btn-outline-primary w-100">设为系统模型</button></form>
+                    <form action="/admin/models/update/{{ model['id'] }}" method="post">{% module xsrf_form_html() %}
+                        <input type="hidden" name="name" value="{{ model['name'] }}">
+                        <input type="hidden" name="model_name" value="{{ model['model_name'] }}">
+                        <input type="hidden" name="base_url" value="{{ model['base_url'] }}">
+                        <input type="hidden" name="api_key" value="{{ model['api_key'] }}">
+                        <input type="hidden" name="conversation_prompt" value="{{ model['conversation_prompt'] }}">
+                        <input type="hidden" name="is_system" value="{% if model['is_system'] %}1{% else %}0{% end %}">
+                        <button class="btn btn-outline-secondary w-100">快速修改</button>
+                    </form>
+                    <form action="/admin/models/delete/{{ model['id'] }}" method="post" onsubmit="return confirm('确认删除该模型？')">{% module xsrf_form_html() %}<button class="btn btn-outline-danger w-100">删除</button></form>
+                </div>
+            </div>
+            {% end %}
+        </div>
+
+        <nav class="mt-4">
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not has_prev %}disabled{% end %}"><a class="page-link" href="/admin/models?page={{ page - 1 }}">上一页</a></li>
+                <li class="page-item disabled"><span class="page-link">第 {{ page }} / {{ total_pages }} 页，共 {{ total }} 条</span></li>
+                <li class="page-item {% if not has_next %}disabled{% end %}"><a class="page-link" href="/admin/models?page={{ page + 1 }}">下一页</a></li>
+            </ul>
+        </nav>
+    </main>
+</div>
+<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+</body>
+</html>

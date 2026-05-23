@@ -1,0 +1,155 @@
+import os
+import sqlite3
+
+import httpx
+
+from app.models.db import get_connection
+
+
+class ModelServiceRepository:
+    @staticmethod
+    def list_models(page: int = 1, page_size: int = 6):
+        offset = (page - 1) * page_size
+        with get_connection() as conn:
+            total = conn.execute("select count(1) as c from model_services").fetchone()["c"]
+            rows = conn.execute(
+                """
+                select id, name, model_name, base_url, api_key, is_system, token_total,
+                       token_today, conversation_prompt, created_at, updated_at
+                from model_services
+                order by is_system desc, id desc
+                limit ? offset ?
+                """,
+                (page_size, offset),
+            ).fetchall()
+        return int(total), rows
+
+    @staticmethod
+    def list_all_models():
+        with get_connection() as conn:
+            return conn.execute("select * from model_services order by is_system desc, id desc").fetchall()
+
+    @staticmethod
+    def get_model(model_id: int):
+        with get_connection() as conn:
+            return conn.execute("select * from model_services where id = ?", (model_id,)).fetchone()
+
+    @staticmethod
+    def create_model(data: dict) -> bool:
+        try:
+            with get_connection() as conn:
+                conn.execute(
+                    """
+                    insert into model_services(
+                        name, model_name, base_url, api_key, is_system,
+                        token_total, token_today, conversation_prompt
+                    ) values(?,?,?,?,?,?,?,?)
+                    """,
+                    (
+                        data.get("name"),
+                        data.get("model_name"),
+                        data.get("base_url"),
+                        data.get("api_key"),
+                        int(data.get("is_system", 0)),
+                        int(data.get("token_total", 0)),
+                        int(data.get("token_today", 0)),
+                        data.get("conversation_prompt", ""),
+                    ),
+                )
+                if int(data.get("is_system", 0)) == 1:
+                    conn.execute("update model_services set is_system = 0 where id != last_insert_rowid()")
+            return True
+        except sqlite3.IntegrityError:
+            return False
+
+    @staticmethod
+    def update_model(model_id: int, data: dict) -> bool:
+        with get_connection() as conn:
+            conn.execute(
+                """
+                update model_services set
+                    name = ?, model_name = ?, base_url = ?, api_key = ?, is_system = ?,
+                    conversation_prompt = ?, updated_at = datetime('now')
+                where id = ?
+                """,
+                (
+                    data.get("name"),
+                    data.get("model_name"),
+                    data.get("base_url"),
+                    data.get("api_key"),
+                    int(data.get("is_system", 0)),
+                    data.get("conversation_prompt", ""),
+                    model_id,
+                ),
+            )
+            if int(data.get("is_system", 0)) == 1:
+                conn.execute("update model_services set is_system = 0 where id != ?", (model_id,))
+        return True
+
+    @staticmethod
+    def delete_model(model_id: int) -> None:
+        with get_connection() as conn:
+            conn.execute("delete from model_services where id = ?", (model_id,))
+
+    @staticmethod
+    def set_system_model(model_id: int) -> None:
+        with get_connection() as conn:
+            conn.execute("update model_services set is_system = 0")
+            conn.execute("update model_services set is_system = 1 where id = ?", (model_id,))
+
+    @staticmethod
+    def get_system_model():
+        with get_connection() as conn:
+            row = conn.execute("select * from model_services where is_system = 1 order by id desc limit 1").fetchone()
+        return row
+
+    @staticmethod
+    def update_tokens(model_id: int, prompt_tokens: int = 0, completion_tokens: int = 0):
+        total_tokens = prompt_tokens + completion_tokens
+        with get_connection() as conn:
+            conn.execute(
+                """
+                update model_services set
+                    token_total = token_total + ?,
+                    token_today = token_today + ?,
+                    updated_at = datetime('now')
+                where id = ?
+                """,
+                (total_tokens, total_tokens, model_id),
+            )
+
+    @staticmethod
+    def ensure_default_model():
+        with get_connection() as conn:
+            exists = conn.execute("select count(1) as c from model_services").fetchone()["c"]
+            if not exists:
+                conn.execute(
+                    """
+                    insert into model_services(
+                        name, model_name, base_url, api_key, is_system,
+                        token_total, token_today, conversation_prompt
+                    ) values(?,?,?,?,?,?,?,?)
+                    """,
+                    (
+                        "默认模型服务",
+                        os.getenv("MODEL_DEFAULT_NAME", "deepseek-v3"),
+                        os.getenv("MODEL_BASE_URL", "https://aigc-api.aitoolcore.com/api/v1"),
+                        os.getenv("MODEL_API_KEY", ""),
+                        1,
+                        0,
+                        0,
+                        "你是一个专业的企业管理助手，请用简洁、准确的方式回答。",
+                    ),
+                )
+
+    @staticmethod
+    def chat(model_id: int, messages: list[dict], stream: bool = False):
+        model = ModelServiceRepository.get_model(model_id)
+        if not model:
+            raise ValueError("模型不存在")
+        api_key = model["api_key"] or os.getenv("MODEL_API_KEY", "")
+        base_url = model["base_url"] or os.getenv("MODEL_BASE_URL", "")
+        client = httpx.Client(timeout=60.0)
+        payload = {"model": model["model_name"], "messages": messages, "stream": stream}
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        return client, base_url, payload, headers
