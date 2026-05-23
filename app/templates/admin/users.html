@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
+    <style>
+        body { background: #f5f7fb; }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 240px; background: linear-gradient(180deg,#0f172a,#111827); color:#fff; padding: 20px; }
+        .content { flex: 1; padding: 24px; }
+        .brand { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+        .menu a { display:block; color:rgba(255,255,255,.85); padding: 12px 14px; border-radius: 10px; text-decoration:none; margin-bottom: 8px; }
+        .menu a.active, .menu a:hover { background: rgba(255,255,255,.12); color:#fff; }
+        .card-soft { border:0; border-radius:16px; box-shadow:0 10px 30px rgba(15,23,42,.08); }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">管理后台</div>
+        <div class="menu">
+            <a href="/admin/users" class="active"><i class="fas fa-users me-2"></i>用户管理</a>
+            <a href="#"><i class="fas fa-display me-2"></i>后台主页（预留）</a>
+        </div>
+        <form action="/admin/logout" method="post" class="mt-4">
+            {% module xsrf_form_html() %}
+            <button class="btn btn-outline-light w-100"><i class="fas fa-right-from-bracket me-2"></i>退出</button>
+        </form>
+    </aside>
+    <main class="content">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="mb-1">用户管理</h3>
+                <div class="text-muted">当前登录用户：{{ username }}</div>
+            </div>
+        </div>
+
+        <div class="card card-soft mb-3">
+            <div class="card-body">
+                <form action="/admin/users/create" method="post" class="row g-3 align-items-end">
+                    {% module xsrf_form_html() %}
+                    <div class="col-md-4">
+                        <label class="form-label">用户名</label>
+                        <input class="form-control" name="username" placeholder="新增用户用户名">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">密码</label>
+                        <input class="form-control" type="password" name="password" placeholder="新增用户密码">
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary"><i class="fas fa-plus me-2"></i>新增用户</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card card-soft">
+            <div class="card-body">
+                <form action="/admin/users/batch-delete" method="post" id="batchForm">
+                    {% module xsrf_form_html() %}
+                    <div class="d-flex gap-2 mb-3">
+                        <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-2"></i>批量删除</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;"><input type="checkbox" id="checkAll"></th>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>创建时间</th>
+                                    <th style="width:240px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td><input type="checkbox" name="user_ids" value="{{ user['id'] }}"></td>
+                                    <td>{{ user['id'] }}</td>
+                                    <td>{{ user['username'] }}</td>
+                                    <td>{{ user['create_at'] }}</td>
+                                    <td>
+                                        <form action="/admin/users/update/{{ user['id'] }}" method="post" class="d-inline">
+                                            {% module xsrf_form_html() %}
+                                            <input type="hidden" name="username" value="{{ user['username'] }}">
+                                            <input type="hidden" name="password" value="">
+                                            <button class="btn btn-sm btn-outline-primary">修改</button>
+                                        </form>
+                                        <form action="/admin/users/delete/{{ user['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除该用户？')">
+                                            {% module xsrf_form_html() %}
+                                            <button class="btn btn-sm btn-outline-danger">删除</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% end %}
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+                <nav>
+                    <ul class="pagination">
+                        <li class="page-item {% if not has_prev %}disabled{% end %}"><a class="page-link" href="/admin/users?page={{ page - 1 }}">上一页</a></li>
+                        <li class="page-item disabled"><span class="page-link">第 {{ page }} / {{ total_pages }} 页，共 {{ total }} 条</span></li>
+                        <li class="page-item {% if not has_next %}disabled{% end %}"><a class="page-link" href="/admin/users?page={{ page + 1 }}">下一页</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+<script>
+const checkAll = document.getElementById('checkAll');
+checkAll?.addEventListener('change', () => {
+    document.querySelectorAll('input[name="user_ids"]').forEach(cb => cb.checked = checkAll.checked);
+});
+</script>
+</body>
+</html>

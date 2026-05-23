@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #111827 45%, #1f2937 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .login-shell {
+            width: min(100%, 1120px);
+            display: grid;
+            grid-template-columns: 1.2fr 0.9fr;
+            gap: 24px;
+            padding: 24px;
+        }
+        .hero {
+            padding: 48px;
+            border-radius: 24px;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 30px 80px rgba(0,0,0,.35);
+        }
+        .hero h1 { font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+        .hero p { color: rgba(255,255,255,.75); line-height: 1.9; margin-bottom: 0; }
+        .login-card {
+            background: rgba(255,255,255,.96);
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0,0,0,.28);
+            padding: 36px;
+            color: #1f2937;
+        }
+        .login-card .title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .sub { color: #6b7280; margin-bottom: 24px; }
+        .form-control:focus { box-shadow: 0 0 0 .2rem rgba(16,185,129,.15); border-color: #10b981; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 0; }
+        .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+        .alert { border: 0; }
+        @media (max-width: 992px) {
+            .login-shell { grid-template-columns: 1fr; }
+            .hero { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-shell">
+        <section class="hero">
+            <h1>AI智能瞭望与智能问数系统</h1>
+            <p>
+                这是企业化管理后台的登录入口，采用沉浸式、自适应界面设计。
+                系统当前处于后台管理框架建设阶段，后续将持续扩展用户管理、权限管理、模型接入与数据问数能力。
+            </p>
+        </section>
+        <section class="login-card">
+            <div class="title">管理员登录</div>
+            <div class="sub">默认管理员账号：<strong>admin / admin888</strong></div>
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% end %}
+            <form method="post" action="/admin/login" class="layui-form">
+                {% module xsrf_form_html() %}
+                <div class="mb-3">
+                    <label class="form-label">用户名</label>
+                    <input class="form-control form-control-lg" name="username" value="admin" placeholder="请输入管理员用户名">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">密码</label>
+                    <input class="form-control form-control-lg" type="password" name="password" value="admin888" placeholder="请输入密码">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-right-to-bracket me-2"></i>进入管理后台
+                </button>
+            </form>
+        </section>
+    </div>
+    <script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+</body>
+</html>
