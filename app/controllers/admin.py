@@ -103,16 +103,6 @@ class AdminUserBatchDeleteHandler(BaseHandler):
         self.redirect("/admin/users")
 
 
-class AdminUserResetPasswordHandler(BaseHandler):
-    @tornado.web.authenticated
-    def post(self, user_id):
-        user_id = int(user_id)
-        password = (self.get_body_argument("password", "") or "").strip()
-        if password:
-            UserRepository.update_user_password_only(user_id, password)
-        self.redirect("/admin/users")
-
-
 class AdminRoleListHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
@@ -191,10 +181,25 @@ class AdminPermissionDeleteHandler(BaseHandler):
 class AdminModelListHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
-        page = max(1, int(self.get_argument("page", 1)))
-        total, models = ModelServiceRepository.list_models(page=page, page_size=6)
-        total_pages = max(1, math.ceil(total / 6))
-        self.render("admin/models.html", title="模型引擎", username=self.current_user, models=models, page=page, total=total, total_pages=total_pages, has_prev=page > 1, has_next=page < total_pages)
+        sources = WatchtowerRepository.list_sources()
+        if not sources:
+            WatchtowerRepository.create_source({
+                "name": "百度新闻",
+                "source_code": "baidu_news",
+                "entry_urls": [
+                    "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_t_sk&tn=news&cl=2&medium=0&rtt=1&wd={关键词}",
+                    "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_b_pn&tn=news&cl=2&medium=0&rtt=1&wd={关键词}&pn={分页步进}"
+                ],
+                "headers": {},
+                "keywords_label": "关键词",
+                "page_param_name": "pn",
+                "page_step": 10,
+                "collect_limit": 10,
+                "is_enabled": 1,
+                "note": "百度新闻专用采集源，仅需填写关键词与起始页数",
+            })
+            sources = WatchtowerRepository.list_sources()
+        self.render("admin/watch_sources.html", title="一句话采集工作台", username=self.current_user, sources=sources)
 
 
 class AdminModelCreateHandler(BaseHandler):
@@ -229,32 +234,119 @@ class AdminModelSystemHandler(BaseHandler):
         self.redirect("/admin/models")
 
 
+class AdminModelTestHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        prompt = (self.get_body_argument("prompt", "") or "").strip()
+        model = ModelServiceRepository.get_system_model()
+        self.set_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.set_header("Cache-Control", "no-cache")
+        self.set_header("Connection", "keep-alive")
+        self.flush()
+
+        def send(msg: str):
+            self.write(f"data: {json.dumps({'message': msg}, ensure_ascii=False)}\n\n")
+            self.flush()
+
+        if not model:
+            send("未找到系统模型")
+            self.finish()
+            return
+
+        prompt_tokens = max(1, len(prompt) // 4)
+        completion_tokens = 0
+        try:
+            send("开始解析你的指令...")
+            intent = ModelServiceRepository.parse_collect_intent(prompt)
+            if intent:
+                send(f"识别到采集任务：关键词={intent['keyword']}，数量={intent['count']}，起始页={intent['start_page']}")
+                records = WatchtowerRepository.collect(source_id=1, keyword=intent["keyword"], start_page=intent["start_page"], item_count=intent["count"])
+                WatchtowerRepository.save_records(records)
+                for record in records:
+                    send(record["title"])
+                    completion_tokens += max(1, len(record["title"]) // 4)
+                send(f"采集完成，共保存 {len(records)} 条标题记录。")
+                completion_tokens += 12
+            else:
+                send("未识别为采集任务，正在调用模型进行普通流式回复...")
+                for raw_line in ModelServiceRepository.stream_chat(model["id"], [{"role": "user", "content": prompt}]):
+                    usage = ModelServiceRepository.parse_stream_usage(raw_line)
+                    if usage:
+                        ModelServiceRepository.update_tokens(model["id"], prompt_tokens=usage["prompt_tokens"], completion_tokens=usage["completion_tokens"])
+                        send(f"[usage] prompt={usage['prompt_tokens']}, completion={usage['completion_tokens']}, total={usage['total_tokens']}")
+                        continue
+                    if raw_line.startswith("data: "):
+                        payload_text = raw_line[6:].strip()
+                        if payload_text in ("[DONE]", "DONE"):
+                            continue
+                        try:
+                            payload = json.loads(payload_text)
+                            delta = payload.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                            if delta:
+                                send(delta)
+                                completion_tokens += max(1, len(delta) // 4)
+                        except Exception:
+                            continue
+                    elif raw_line:
+                        send(raw_line)
+                        completion_tokens += max(1, len(raw_line) // 4)
+
+            if completion_tokens:
+                ModelServiceRepository.update_tokens(model["id"], prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
+        except Exception as exc:
+            send(f"执行失败：{exc}")
+        self.finish()
+
+
 class AdminWatchSourceListHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         sources = WatchtowerRepository.list_sources()
-        self.render("admin/watch_sources.html", title="瞭望数据源管理", username=self.current_user, sources=sources)
+        if not sources:
+            WatchtowerRepository.create_source({
+                "name": "百度新闻",
+                "source_code": "baidu_news",
+                "entry_urls": [
+                    "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_t_sk&tn=news&cl=2&medium=0&rtt=1&wd={关键词}",
+                    "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_b_pn&tn=news&cl=2&medium=0&rtt=1&wd={关键词}&pn={分页步进}"
+                ],
+                "headers": {},
+                "keywords_label": "关键词",
+                "page_param_name": "pn",
+                "page_step": 10,
+                "collect_limit": 10,
+                "is_enabled": 1,
+                "note": "百度新闻专用采集源，仅需填写关键词与起始页数",
+            })
+            sources = WatchtowerRepository.list_sources()
+        self.render("admin/watch_sources.html", title="百度新闻采集", username=self.current_user, sources=sources)
 
 
 class AdminWatchSourceCreateHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self):
-        entry_urls = self.get_body_arguments("entry_urls")
-        headers_json = self.get_body_argument("headers_json", "{}")
-        headers = json.loads(headers_json or "{}")
+        # 固定为百度新闻专用源，仅保留关键词和起始页逻辑
         data = {
-            "name": self.get_body_argument("name", "").strip(),
-            "source_code": self.get_body_argument("source_code", "").strip(),
-            "entry_urls": [u for u in entry_urls if u.strip()],
-            "headers": headers,
-            "keywords_label": self.get_body_argument("keywords_label", "关键字").strip(),
-            "page_param_name": self.get_body_argument("page_param_name", "pn").strip(),
-            "page_step": int(self.get_body_argument("page_step", 10) or 10),
-            "collect_limit": int(self.get_body_argument("collect_limit", 10) or 10),
-            "is_enabled": 1 if self.get_body_argument("is_enabled", "1") == "1" else 0,
-            "note": self.get_body_argument("note", "").strip(),
+            "name": "百度新闻",
+            "source_code": "baidu_news",
+            "entry_urls": [
+                "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_t_sk&tn=news&cl=2&medium=0&rtt=1&wd={关键词}",
+                "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_b_pn&tn=news&cl=2&medium=0&rtt=1&wd={关键词}&pn={分页步进}"
+            ],
+            "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+            },
+            "keywords_label": "关键词",
+            "page_param_name": "pn",
+            "page_step": 10,
+            "collect_limit": 10,
+            "is_enabled": 1,
+            "note": "百度新闻专用采集源，仅需填写关键词与起始页数",
         }
-        if data["name"] and data["source_code"]:
+        exists = any(source["source_code"] == "baidu_news" for source in WatchtowerRepository.list_sources())
+        if not exists:
             WatchtowerRepository.create_source(data)
         self.redirect("/admin/watch-sources")
 
@@ -262,22 +354,22 @@ class AdminWatchSourceCreateHandler(BaseHandler):
 class AdminWatchSourceUpdateHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self, source_id):
-        entry_urls = self.get_body_arguments("entry_urls")
-        headers_json = self.get_body_argument("headers_json", "{}")
-        headers = json.loads(headers_json or "{}")
-        data = {
-            "name": self.get_body_argument("name", "").strip(),
-            "source_code": self.get_body_argument("source_code", "").strip(),
-            "entry_urls": [u for u in entry_urls if u.strip()],
-            "headers": headers,
-            "keywords_label": self.get_body_argument("keywords_label", "关键字").strip(),
-            "page_param_name": self.get_body_argument("page_param_name", "pn").strip(),
-            "page_step": int(self.get_body_argument("page_step", 10) or 10),
-            "collect_limit": int(self.get_body_argument("collect_limit", 10) or 10),
-            "is_enabled": 1 if self.get_body_argument("is_enabled", "1") == "1" else 0,
-            "note": self.get_body_argument("note", "").strip(),
-        }
-        WatchtowerRepository.update_source(int(source_id), data)
+        # 固定源不允许修改结构，仅保留启用状态
+        source = WatchtowerRepository.get_source(int(source_id))
+        if source and source["source_code"] == "baidu_news":
+            data = {
+                "name": "百度新闻",
+                "source_code": "baidu_news",
+                "entry_urls": json.loads(source["entry_urls_json"] or "[]"),
+                "headers": json.loads(source["headers_json"] or "{}"),
+                "keywords_label": "关键词",
+                "page_param_name": "pn",
+                "page_step": 10,
+                "collect_limit": 10,
+                "is_enabled": 1 if self.get_body_argument("is_enabled", "1") == "1" else 0,
+                "note": "百度新闻专用采集源，仅需填写关键词与起始页数",
+            }
+            WatchtowerRepository.update_source(int(source_id), data)
         self.redirect("/admin/watch-sources")
 
 
@@ -293,9 +385,9 @@ class AdminWatchCollectHandler(BaseHandler):
     def post(self):
         source_id = int(self.get_body_argument("source_id"))
         keyword = (self.get_body_argument("keyword", "") or "").strip()
-        page_count = int(self.get_body_argument("page_count", 1) or 1)
+        start_page = int(self.get_body_argument("start_page", 0) or 0)
         item_count = int(self.get_body_argument("item_count", 1) or 1)
-        records = WatchtowerRepository.collect(source_id, keyword, page_count, item_count)
+        records = WatchtowerRepository.collect(source_id, keyword, start_page, item_count)
         WatchtowerRepository.save_records(records)
         self.redirect("/admin/watch-records")
 
@@ -307,7 +399,8 @@ class AdminWatchRecordListHandler(BaseHandler):
         total, records = WatchtowerRepository.list_records(page=page, page_size=20)
         total_pages = max(1, math.ceil(total / 20))
         sources = WatchtowerRepository.list_sources()
-        self.render("admin/watch_records.html", title="数据仓库", username=self.current_user, records=records, sources=sources, page=page, total=total, total_pages=total_pages, has_prev=page > 1, has_next=page < total_pages)
+        start_no = total - (page - 1) * 20
+        self.render("admin/watch_records.html", title="数据仓库", username=self.current_user, records=records, sources=sources, page=page, total=total, total_pages=total_pages, has_prev=page > 1, has_next=page < total_pages, start_no=start_no)
 
 
 class AdminWatchRecordDeleteHandler(BaseHandler):

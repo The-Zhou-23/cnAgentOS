@@ -1,6 +1,9 @@
 import json
+import re
 import sqlite3
-from datetime import datetime
+from html import unescape
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 from app.models.db import get_connection
 
@@ -75,23 +78,73 @@ class WatchtowerRepository:
             conn.execute("delete from watch_sources where id = ?", (source_id,))
 
     @staticmethod
-    def collect(source_id: int, keyword: str, page_count: int, item_count: int):
+    def _build_baidu_news_url(keyword: str, start_page: int):
+        query = quote(keyword, safe="")
+        if start_page <= 0:
+            return f"https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_t_sk&tn=news&cl=2&medium=0&rtt=1&wd={query}"
+        return f"https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_b_pn&tn=news&cl=2&medium=0&rtt=1&wd={query}&pn={start_page}"
+
+    @staticmethod
+    def _fetch_html(url: str, headers_json: str = "{}"):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        }
+        try:
+            extra = json.loads(headers_json or "{}")
+            if isinstance(extra, dict):
+                headers.update({str(k): str(v) for k, v in extra.items() if v is not None})
+        except Exception:
+            pass
+        req = Request(url, headers=headers)
+        with urlopen(req, timeout=30) as resp:
+            return resp.read().decode("utf-8", errors="ignore")
+
+    @staticmethod
+    def _parse_titles(html: str):
+        titles = []
+        patterns = [
+            r"<h3[^>]*class=\"[^\"]*news-title[^\"]*\"[^>]*>.*?<a[^>]*>(.*?)</a>",
+            r"<h3[^>]*>.*?<a[^>]*>(.*?)</a>",
+            r"<a[^>]*class=\"[^\"]*news-title[^\"]*\"[^>]*>(.*?)</a>",
+        ]
+        for pat in patterns:
+            matches = re.findall(pat, html, flags=re.S | re.I)
+            for m in matches:
+                text = re.sub(r"<[^>]+>", "", m)
+                text = unescape(re.sub(r"\s+", " ", text)).strip()
+                if text and text not in titles:
+                    titles.append(text)
+        if not titles:
+            generic = re.findall(r"<a[^>]*>(.*?)</a>", html, flags=re.S | re.I)
+            for m in generic:
+                text = re.sub(r"<[^>]+>", "", m)
+                text = unescape(re.sub(r"\s+", " ", text)).strip()
+                if len(text) >= 6 and text not in titles:
+                    titles.append(text)
+        return titles
+
+    @staticmethod
+    def collect(source_id: int, keyword: str, start_page: int, item_count: int):
         source = WatchtowerRepository.get_source(source_id)
         if not source:
             return []
+        url = WatchtowerRepository._build_baidu_news_url(keyword, start_page)
+        html = WatchtowerRepository._fetch_html(url, source["headers_json"])
+        titles = WatchtowerRepository._parse_titles(html)
         rows = []
-        for page_index in range(max(1, page_count)):
-            for item_index in range(max(1, item_count)):
-                rows.append(
-                    {
-                        "source_id": source_id,
-                        "source_name": source["name"],
-                        "keyword": keyword,
-                        "title": f"{keyword} - 模拟采集结果 {page_index + 1}-{item_index + 1}",
-                        "content": f"来自 {source['name']} 的动态采集内容，支持后续批量采集任务接入。",
-                        "url": source["entry_urls_json"],
-                    }
-                )
+        for idx, title in enumerate(titles[: max(1, item_count)], start=1):
+            rows.append(
+                {
+                    "source_id": source_id,
+                    "source_name": source["name"],
+                    "keyword": keyword,
+                    "title": title,
+                    "content": "",
+                    "url": url,
+                }
+            )
         return rows
 
     @staticmethod

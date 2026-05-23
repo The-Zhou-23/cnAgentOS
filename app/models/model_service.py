@@ -144,7 +144,7 @@ class ModelServiceRepository:
                 )
 
     @staticmethod
-    def chat(model_id: int, messages: list[dict], stream: bool = False):
+    def _build_request(model_id: int, messages: list[dict], stream: bool = False):
         model = ModelServiceRepository.get_model(model_id)
         if not model:
             raise ValueError("模型不存在")
@@ -154,5 +154,50 @@ class ModelServiceRepository:
         headers = {"Content-Type": "application/json"}
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
-        request = Request(f"{base_url.rstrip('/')}/chat/completions", data=payload, headers=headers, method="POST")
-        return request, stream
+        return model, Request(f"{base_url.rstrip('/')}/chat/completions", data=payload, headers=headers, method="POST")
+
+    @staticmethod
+    def chat(model_id: int, messages: list[dict], stream: bool = False):
+        _, request = ModelServiceRepository._build_request(model_id, messages, stream=stream)
+        with urlopen(request, timeout=120) as resp:
+            return resp.read().decode("utf-8", errors="ignore")
+
+    @staticmethod
+    def stream_chat(model_id: int, messages: list[dict]):
+        _, request = ModelServiceRepository._build_request(model_id, messages, stream=True)
+        with urlopen(request, timeout=120) as resp:
+            while True:
+                line = resp.readline()
+                if not line:
+                    break
+                text = line.decode("utf-8", errors="ignore").strip()
+                if not text:
+                    continue
+                yield text
+
+    @staticmethod
+    def parse_stream_usage(line: str):
+        try:
+            if line.startswith("data: "):
+                line = line[6:]
+            if line in ("[DONE]", "DONE"):
+                return None
+            payload = json.loads(line)
+            usage = payload.get("usage") or {}
+            if usage:
+                return {
+                    "prompt_tokens": int(usage.get("prompt_tokens", 0) or 0),
+                    "completion_tokens": int(usage.get("completion_tokens", 0) or 0),
+                    "total_tokens": int(usage.get("total_tokens", 0) or 0),
+                }
+        except Exception:
+            return None
+        return None
+
+    @staticmethod
+    def parse_collect_intent(text: str):
+        import re
+        m = re.search(r"收集(.+?)的(\d+)条信息", text)
+        if not m:
+            return None
+        return {"action": "collect_baidu_news", "keyword": m.group(1).strip(), "count": int(m.group(2)), "start_page": 0}

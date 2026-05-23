@@ -6,81 +6,16 @@
     <title>{{ title }}</title>
     <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
+    <style>
+        body { background:#f5f6f8; color:#1f2937; }
+        .page-shell{display:flex;min-height:100vh;background:#f5f6f8;}
+        .sidebar{width:260px;background:#fff;border-right:1px solid #e5e7eb;}
+        .main{flex:1;padding:28px;}
+        .hero,.panel,.card-soft{background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.04);}
+        .hero{padding:24px;margin-bottom:18px}.panel,.card-soft{padding:22px;margin-bottom:18px}
+        .badge-soft{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:#f3f4f6;color:#4b5563;font-size:13px}
+        .muted{color:#6b7280}.subtitle{color:#6b7280}.nav-card a.active{background:#f3f4f6;border-color:#e5e7eb}.nav-card a:hover{background:#f9fafb}
+    </style>
 </head>
-<body class="admin-shell">
-<div class="page-shell">
-    <aside class="sidebar">
-        <div class="brand">
-            <strong>cnAgentOS</strong>
-            <span>AI 智能瞭望与智能问数系统</span>
-        </div>
-        <div class="nav-card">
-            <a href="/admin/users"><i class="fas fa-users"></i>用户管理</a>
-            <a href="/admin/roles"><i class="fas fa-user-shield"></i>角色管理</a>
-            <a class="active" href="/admin/permissions"><i class="fas fa-sitemap"></i>权限管理</a>
-            <a href="#" class="text-muted"><i class="fas fa-layer-group"></i>功能管理</a>
-        </div>
-        <form action="/admin/logout" method="post" class="mt-4">
-            {% module xsrf_form_html() %}
-            <button class="btn btn-light w-100"><i class="fas fa-right-from-bracket me-2"></i>退出登录</button>
-        </form>
-    </aside>
-    <main class="main">
-        <div class="topbar">
-            <div>
-                <h1 class="title-large">权限管理</h1>
-                <div class="subtitle">采用二级联动方式维护菜单分组、权限点与角色映射</div>
-            </div>
-            <div class="badge-soft"><i class="fas fa-sitemap me-2"></i>支持新增 / 修改 / 删除</div>
-        </div>
-
-        <div class="glass-strong card-soft mb-4">
-            <form action="/admin/permissions/create" method="post" class="row g-3 align-items-end">
-                {% module xsrf_form_html() %}
-                <div class="col-md-3"><label class="form-label fw-semibold">菜单分组</label><input class="form-control" name="menu_group" placeholder="如：系统管理"></div>
-                <div class="col-md-3"><label class="form-label fw-semibold">权限名称</label><input class="form-control" name="name" placeholder="如：角色管理"></div>
-                <div class="col-md-3"><label class="form-label fw-semibold">权限编码</label><input class="form-control" name="code" placeholder="如：system.role"></div>
-                <div class="col-md-2"><label class="form-label fw-semibold">排序</label><input class="form-control" name="sort_no" placeholder="10"></div>
-                <div class="col-md-1 d-grid"><button class="btn btn-primary">新增</button></div>
-            </form>
-        </div>
-
-        <div class="glass-strong card-soft">
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead><tr><th>ID</th><th>分组</th><th>名称</th><th>编码</th><th>排序</th><th style="width:240px;">操作</th></tr></thead>
-                    <tbody>
-                    {% for p in permissions %}
-                    <tr>
-                        <td class="text-secondary">#{{ p['id'] }}</td>
-                        <td class="fw-semibold">{{ p['menu_group'] }}</td>
-                        <td>{{ p['name'] }}</td>
-                        <td><span class="badge-soft">{{ p['code'] }}</span></td>
-                        <td>{{ p['sort_no'] }}</td>
-                        <td>
-                            <form action="/admin/permissions/update/{{ p['id'] }}" method="post" class="d-inline">
-                                {% module xsrf_form_html() %}
-                                <input type="hidden" name="menu_group" value="{{ p['menu_group'] }}">
-                                <input type="hidden" name="name" value="{{ p['name'] }}">
-                                <input type="hidden" name="code" value="{{ p['code'] }}">
-                                <input type="hidden" name="sort_no" value="{{ p['sort_no'] }}">
-                                <button class="btn btn-sm btn-outline-secondary">修改</button>
-                            </form>
-                            <form action="/admin/permissions/delete/{{ p['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除权限？')">
-                                {% module xsrf_form_html() %}
-                                <button class="btn btn-sm btn-outline-danger">删除</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% end %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-</div>
-<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
-</body>
-</html>
+<body><div class="page-shell"><aside class="sidebar"><div class="brand"><strong>cnAgentOS</strong><span>AI 智能瞭望与智能问数系统</span></div><div class="nav-card"><a href="/admin/users"><i class="fas fa-users"></i>用户管理</a><a href="/admin/roles"><i class="fas fa-user-shield"></i>角色管理</a><a class="active" href="/admin/permissions"><i class="fas fa-sitemap"></i>权限管理</a><a href="/admin/watch-sources"><i class="fas fa-layer-group"></i>百度新闻采集</a></div><form action="/admin/logout" method="post" class="mt-4">{% module xsrf_form_html() %}<button class="btn btn-outline-secondary w-100">退出登录</button></form></aside><main class="main"><div class="hero"><div class="d-flex justify-content-between align-items-center flex-wrap gap-3"><div><div class="badge-soft mb-2">权限管理</div><h1 class="title-large mb-2">权限管理</h1><div class="subtitle">管理菜单、按钮等权限项</div></div></div></div><div class="panel"><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>ID</th><th>菜单组</th><th>名称</th><th>编码</th><th>排序</th></tr></thead><tbody>{% for p in permissions %}<tr><td class="text-secondary">#{{ p['id'] }}</td><td>{{ p['menu_group'] }}</td><td class="fw-semibold">{{ p['name'] }}</td><td><span class="badge-soft">{{ p['code'] }}</span></td><td>{{ p['sort_no'] }}</td></tr>{% end %}</tbody></table></div></div></main></div></body></html>
