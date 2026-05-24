@@ -1,0 +1,14 @@
+<aside class="sidebar">
+    <div class="brand">
+        <strong>cnAgentOS</strong>
+        <span>AI 智能瞭望与智能问数系统</span>
+    </div>
+    <div class="nav-card">
+        <a href="/admin/users" class="{% if active_page == 'users' %}active{% end %}"><i class="fas fa-users"></i>用户管理</a>
+        <a href="/admin/roles" class="{% if active_page == 'roles' %}active{% end %}"><i class="fas fa-user-shield"></i>角色管理</a>
+        <a href="/admin/permissions" class="{% if active_page == 'permissions' %}active{% end %}"><i class="fas fa-sitemap"></i>权限管理</a>
+        <a href="/admin/api-interfaces" class="{% if active_page == 'api_interfaces' %}active{% end %}"><i class="fas fa-plug"></i>接口管理</a>
+        <a href="/admin/watch-sources" class="{% if active_page == 'watch_sources' %}active{% end %}"><i class="fas fa-layer-group"></i>百度新闻采集</a>
+    </div>
+    <form action="/admin/logout" method="post" class="mt-4">{% module xsrf_form_html() %}<button class="btn btn-outline-secondary w-100">退出登录</button></form>
+</aside>

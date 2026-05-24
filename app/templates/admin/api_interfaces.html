@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
+    <style>
+        body { background:#f5f6f8; color:#1f2937; }
+        .page-shell { display:flex; min-height:100vh; background:#f5f6f8; }
+        .sidebar { width:260px; background:#fff; border-right:1px solid #e5e7eb; }
+        .main { flex:1; padding:28px; }
+        .hero, .panel, .card-soft { background:#fff; border:1px solid #e5e7eb; border-radius:18px; box-shadow:0 10px 30px rgba(15,23,42,.04); }
+        .hero { padding:24px; margin-bottom:18px; }
+        .panel, .card-soft { padding:22px; margin-bottom:18px; }
+        .badge-soft { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:#f3f4f6; color:#4b5563; font-size:13px; }
+        .nav-card a.active { background:#f3f4f6; border-color:#e5e7eb; }
+        .nav-card a:hover { background:#f9fafb; }
+        .table thead th { color:#6b7280; font-weight:600; }
+    </style>
+</head>
+<body>
+<div class="page-shell">
+{% set active_page = 'api_interfaces' %}
+{% include "_sidebar.html" %}
+    <main class="main">
+        <div class="hero">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <div class="badge-soft mb-2">接口管理</div>
+                    <h1 class="title-large mb-2">接口数据管理</h1>
+                    <div class="subtitle">管理音乐 API、天气 API 等接口基础数据</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel mb-4">
+            <form action="/admin/api-interfaces/create" method="post" class="row g-3 align-items-end">
+                {% module xsrf_form_html() %}
+                <div class="col-md-3"><input class="form-control" name="name" placeholder="接口名称"></div>
+                <div class="col-md-5"><input class="form-control" name="api_url" placeholder="接口地址"></div>
+                <div class="col-md-2"><input class="form-control" name="request_method" value="GET" placeholder="请求方式"></div>
+                <div class="col-md-2 d-grid"><button class="btn btn-primary">新增接口</button></div>
+                <div class="col-md-3"><input class="form-control" name="response_format" value="JSON" placeholder="返回格式"></div>
+                <div class="col-md-3"><input class="form-control" name="request_example" placeholder="请求示例"></div>
+                <div class="col-md-3"><input class="form-control" name="qps_limit" placeholder="QPS限制"></div>
+                <div class="col-md-3"><input class="form-control" name="note" placeholder="备注"></div>
+            </form>
+        </div>
+
+        <div class="panel">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>名称</th><th>接口地址</th><th>返回格式</th><th>请求方式</th><th>请求示例</th><th>QPS</th><th>备注</th><th style="width:180px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in interfaces %}
+                        <tr>
+                            <td class="text-secondary">#{{ item['id'] }}</td>
+                            <td class="fw-semibold">{{ item['name'] }}</td>
+                            <td class="text-break">{{ item['api_url'] }}</td>
+                            <td><span class="badge-soft">{{ item['response_format'] }}</span></td>
+                            <td>{{ item['request_method'] }}</td>
+                            <td class="text-break">{{ item['request_example'] }}</td>
+                            <td>{{ item['qps_limit'] }}</td>
+                            <td>{{ item['note'] }}</td>
+                            <td>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <form action="/admin/api-interfaces/update/{{ item['id'] }}" method="post" class="d-grid gap-2" style="min-width:160px;">
+                                        {% module xsrf_form_html() %}
+                                        <input type="hidden" name="name" value="{{ item['name'] }}">
+                                        <input type="hidden" name="api_url" value="{{ item['api_url'] }}">
+                                        <input type="hidden" name="response_format" value="{{ item['response_format'] }}">
+                                        <input type="hidden" name="request_method" value="{{ item['request_method'] }}">
+                                        <input type="hidden" name="request_example" value="{{ item['request_example'] }}">
+                                        <input type="hidden" name="qps_limit" value="{{ item['qps_limit'] }}">
+                                        <input type="hidden" name="note" value="{{ item['note'] }}">
+                                        <button class="btn btn-sm btn-outline-primary" type="submit">快速保存</button>
+                                    </form>
+                                    <form action="/admin/api-interfaces/delete/{{ item['id'] }}" method="post" onsubmit="return confirm('确认删除该接口？')">
+                                        {% module xsrf_form_html() %}
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% end %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

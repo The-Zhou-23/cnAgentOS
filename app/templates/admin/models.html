@@ -25,17 +25,8 @@
 </head>
 <body class="admin-shell">
 <div class="page-shell">
-    <aside class="sidebar">
-        <div class="brand"><strong>cnAgentOS</strong><span>AI 智能瞭望与智能问数系统</span></div>
-        <div class="nav-card">
-            <a href="/admin/users"><i class="fas fa-users"></i>用户管理</a>
-            <a href="/admin/roles"><i class="fas fa-user-shield"></i>角色管理</a>
-            <a href="/admin/permissions"><i class="fas fa-sitemap"></i>权限管理</a>
-            <a class="active" href="/admin/models"><i class="fas fa-cubes"></i>模型引擎</a>
-            <a href="/admin/watch-sources"><i class="fas fa-layer-group"></i>一句话采集工作台</a>
-        </div>
-        <form action="/admin/logout" method="post" class="mt-4">{% module xsrf_form_html() %}<button class="btn btn-light w-100">退出登录</button></form>
-    </aside>
+{% set active_page = 'api_interfaces' %}
+{% include "_sidebar.html" %}
     <main class="main">
         <div class="glass-strong model-hero">
             <div class="topbar mb-0">

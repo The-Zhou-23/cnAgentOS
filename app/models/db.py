@@ -119,6 +119,22 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS api_interfaces(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                api_url TEXT NOT NULL UNIQUE,
+                response_format TEXT NOT NULL DEFAULT 'JSON',
+                request_method TEXT NOT NULL DEFAULT 'GET',
+                request_example TEXT NOT NULL,
+                qps_limit TEXT NOT NULL DEFAULT '每2秒最多4次，携带Token可无视限制',
+                note TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT(datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT(datetime('now'))
+            )
+            """
+        )
         _ensure_column(conn, "users", "role_id", "role_id INTEGER")
 
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
@@ -126,4 +142,6 @@ def init_db():
         conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "功能管理", "system.menu", 10))
         conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "权限管理", "system.permission", 20))
         conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "角色管理", "system.role", 30))
+        conn.execute("INSERT OR IGNORE INTO api_interfaces(name, api_url, response_format, request_method, request_example, qps_limit, note) VALUES(?, ?, ?, ?, ?, ?, ?)", ("音乐 API", "https://api.52vmy.cn/api/music/wy/rand", "JSON", "GET", "https://api.52vmy.cn/api/music/wy/rand", "每2秒最多4次，携带Token可无视限制", ""))
+        conn.execute("INSERT OR IGNORE INTO api_interfaces(name, api_url, response_format, request_method, request_example, qps_limit, note) VALUES(?, ?, ?, ?, ?, ?, ?)", ("天气 API", "https://api.52vmy.cn/api/query/tian", "JSON", "GET", "https://api.52vmy.cn/api/query/tian?city=北京市", "每2秒最多4次，携带Token可无视限制", "点击前往三日天气 API"))
         conn.execute("UPDATE users SET role_id = (SELECT id FROM roles WHERE code = 'super_admin') WHERE username = 'admin'")

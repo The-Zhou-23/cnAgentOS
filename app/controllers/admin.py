@@ -4,6 +4,7 @@ import math
 import tornado.web
 
 from app.controllers.base import BaseHandler
+from app.models.api_interface import APIInterfaceRepository
 from app.models.model_service import ModelServiceRepository
 from app.models.rbac import RBACRepository
 from app.models.user import UserRepository
@@ -176,6 +177,38 @@ class AdminPermissionDeleteHandler(BaseHandler):
     def post(self, permission_id):
         RBACRepository.delete_permission(int(permission_id))
         self.redirect("/admin/permissions")
+
+
+class AdminAPIInterfaceListHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        interfaces = APIInterfaceRepository.list_interfaces()
+        self.render("admin/api_interfaces.html", title="接口管理", username=self.current_user, interfaces=interfaces)
+
+
+class AdminAPIInterfaceCreateHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        data = {k: (self.get_body_argument(k, "") or "").strip() for k in ["name", "api_url", "response_format", "request_method", "request_example", "qps_limit", "note"]}
+        if data["name"] and data["api_url"]:
+            APIInterfaceRepository.create_interface(data)
+        self.redirect("/admin/api-interfaces")
+
+
+class AdminAPIInterfaceUpdateHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, interface_id):
+        data = {k: (self.get_body_argument(k, "") or "").strip() for k in ["name", "api_url", "response_format", "request_method", "request_example", "qps_limit", "note"]}
+        if data["name"] and data["api_url"]:
+            APIInterfaceRepository.update_interface(int(interface_id), data)
+        self.redirect("/admin/api-interfaces")
+
+
+class AdminAPIInterfaceDeleteHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self, interface_id):
+        APIInterfaceRepository.delete_interface(int(interface_id))
+        self.redirect("/admin/api-interfaces")
 
 
 class AdminModelListHandler(BaseHandler):
