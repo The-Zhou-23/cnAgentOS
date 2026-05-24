@@ -7,6 +7,32 @@ from urllib.error import HTTPError, URLError
 from app.models.db import get_connection
 
 
+def _load_dotenv_if_needed():
+    """Load project .env when running locally so model config is available."""
+    for key in ("MODEL_API_KEY", "MODEL_BASE_URL", "MODEL_DEFAULT_NAME"):
+        if os.getenv(key):
+            continue
+        env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, ".env"))
+        if not os.path.exists(env_path):
+            return
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    if k not in ("MODEL_API_KEY", "MODEL_BASE_URL", "MODEL_DEFAULT_NAME"):
+                        continue
+                    os.environ.setdefault(k, v.strip())
+        except Exception:
+            return
+
+
+_load_dotenv_if_needed()
+
+
 class ModelServiceRepository:
     @staticmethod
     def list_models(page: int = 1, page_size: int = 6):

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
+    <style>
+        body { background:#f5f6f8; color:#1f2937; }
+        .page-shell { display:flex; min-height:100vh; background:#f5f6f8; }
+        .main { flex:1; padding:28px; }
+        .hero, .panel, .card-soft { background:#fff; border:1px solid #e5e7eb; border-radius:18px; box-shadow:0 10px 30px rgba(15,23,42,.04); }
+        .hero { padding:24px; margin-bottom:18px; }
+        .panel, .card-soft { padding:22px; margin-bottom:18px; }
+        .badge-soft { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:#f3f4f6; color:#4b5563; font-size:13px; }
+        #chatBox { white-space: pre-wrap; background:#f8fafc; color:#111827; min-height:220px; border-radius:16px; border:1px solid #e5e7eb; padding:16px; }
+        .muted { color:#6b7280; }
+        .nav-card a.active { background:#f3f4f6; border-color:#e5e7eb; }
+        .nav-card a:hover { background:#f9fafb; }
+    </style>
+</head>
+<body>
+<div class="page-shell">
+{% set active_page = 'digital_employees' %}
+{% include "_sidebar.html" %}
+    <main class="main">
+        <div class="hero">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <div class="badge-soft mb-2">数字员工</div>
+                    <h1 class="title-large mb-2">数字员工管理</h1>
+                    <div class="subtitle">管理 @川小农、@天气、@音乐 等员工，支持模型型与接口型能力配置。</div>
+                </div>
+                <a class="btn btn-dark" href="#createForm">新增员工</a>
+            </div>
+        </div>
+
+        <div class="panel" id="createForm">
+            <form action="/admin/digital-employees/create" method="post" class="row g-3 align-items-end">
+                {% module xsrf_form_html() %}
+                <div class="col-md-2"><label class="form-label fw-semibold">别名</label><input class="form-control" name="alias" placeholder="川小农"></div>
+                <div class="col-md-3"><label class="form-label fw-semibold">描述</label><input class="form-control" name="description" placeholder="数字员工描述"></div>
+                <div class="col-md-2"><label class="form-label fw-semibold">类型</label><select class="form-select" name="employee_type"><option value="model">模型型</option><option value="api">接口型</option></select></div>
+                <div class="col-md-2"><label class="form-label fw-semibold">模型ID</label><input class="form-control" name="model_service_id" placeholder="可选"></div>
+                <div class="col-md-2"><label class="form-label fw-semibold">接口ID</label><input class="form-control" name="api_interface_id" placeholder="可选"></div>
+                <div class="col-md-1 d-grid"><button class="btn btn-primary" type="submit">新增</button></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Prompt</label><input class="form-control" name="prompt" placeholder="模型型员工提示词"></div>
+                <div class="col-md-2"><label class="form-label fw-semibold">启用</label><select class="form-select" name="is_enabled"><option value="1">是</option><option value="0">否</option></select></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">配置 JSON</label><input class="form-control" name="config_json" placeholder='{}'></div>
+            </form>
+        </div>
+
+        <div class="panel">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr><th>ID</th><th>别名</th><th>描述</th><th>类型</th><th>模型ID</th><th>接口ID</th><th>启用</th><th style="width:200px;">操作</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for e in employees %}
+                        <tr>
+                            <td class="text-secondary">#{{ e['id'] }}</td>
+                            <td class="fw-semibold">@{{ e['alias'] }}</td>
+                            <td>{{ e['description'] }}</td>
+                            <td><span class="badge-soft">{{ e['employee_type'] }}</span></td>
+                            <td>{{ e['model_service_id'] if e['model_service_id'] else '-' }}</td>
+                            <td>{{ e['api_interface_id'] if e['api_interface_id'] else '-' }}</td>
+                            <td>{% if e['is_enabled'] %}<span class="badge-soft">是</span>{% else %}<span class="badge-soft">否</span>{% end %}</td>
+                            <td>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <form action="/admin/digital-employees/update/{{ e['id'] }}" method="post" class="d-grid gap-2" style="min-width:180px;">
+                                        {% module xsrf_form_html() %}
+                                        <input type="hidden" name="alias" value="{{ e['alias'] }}">
+                                        <input type="hidden" name="description" value="{{ e['description'] }}">
+                                        <input type="hidden" name="employee_type" value="{{ e['employee_type'] }}">
+                                        <input type="hidden" name="model_service_id" value="{{ e['model_service_id'] if e['model_service_id'] else '' }}">
+                                        <input type="hidden" name="api_interface_id" value="{{ e['api_interface_id'] if e['api_interface_id'] else '' }}">
+                                        <input type="hidden" name="prompt" value="{{ e['prompt'] }}">
+                                        <input type="hidden" name="config_json" value="{{ e['config_json'] }}">
+                                        <input type="hidden" name="is_enabled" value="{{ e['is_enabled'] }}">
+                                        <button class="btn btn-sm btn-outline-primary" type="submit">快速保存</button>
+                                    </form>
+                                    <form action="/admin/digital-employees/delete/{{ e['id'] }}" method="post" onsubmit="return confirm('确认删除该数字员工？')">
+                                        {% module xsrf_form_html() %}
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% end %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="badge-soft mb-2">对话测试</div>
+            <form id="employeeChatForm" class="row g-3 align-items-end">
+                {% module xsrf_form_html() %}
+                <div class="col-lg-10"><input class="form-control form-control-lg" name="message" placeholder="例如：@川小农 帮我介绍一下智慧农业"></div>
+                <div class="col-lg-2 d-grid"><button class="btn btn-dark btn-lg" type="submit">发送</button></div>
+            </form>
+            <div class="mt-3" id="chatBox">等待输入...</div>
+        </div>
+    </main>
+</div>
+<script>
+const chatForm = document.getElementById('employeeChatForm');
+const chatBox = document.getElementById('chatBox');
+chatForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  chatBox.textContent = '开始处理...\n';
+  const resp = await fetch('/admin/digital-employees/chat', { method: 'POST', body: new FormData(chatForm) });
+  if (!resp.ok || !resp.body) { chatBox.textContent += '请求失败'; return; }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop() || '';
+    for (const part of parts) {
+      const line = part.split('\n').find(x => x.startsWith('data: '));
+      if (!line) continue;
+      try {
+        const payload = JSON.parse(line.slice(6));
+        if (payload.message) chatBox.textContent += payload.message + '\n';
+      } catch (err) {}
+    }
+  }
+});
+</script>
+</body>
+</html>

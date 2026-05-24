@@ -5,14 +5,19 @@ import tornado.web
 from tornado.httpserver import HTTPServer
 
 from app.controllers.admin import (
-    AdminLoginHandler,
-    AdminLogoutHandler,
-    AdminModelCreateHandler,
-    AdminModelDeleteHandler,
     AdminAPIInterfaceCreateHandler,
     AdminAPIInterfaceDeleteHandler,
     AdminAPIInterfaceListHandler,
     AdminAPIInterfaceUpdateHandler,
+    AdminDigitalEmployeeChatHandler,
+    AdminDigitalEmployeeCreateHandler,
+    AdminDigitalEmployeeDeleteHandler,
+    AdminDigitalEmployeeListHandler,
+    AdminDigitalEmployeeUpdateHandler,
+    AdminLoginHandler,
+    AdminLogoutHandler,
+    AdminModelCreateHandler,
+    AdminModelDeleteHandler,
     AdminModelListHandler,
     AdminModelSystemHandler,
     AdminModelTestHandler,
@@ -45,6 +50,7 @@ from app.controllers.auth import LoginHandler, LogoutHandler
 from app.controllers.home import IndexHandler
 from app.models.db import init_db
 from app.models.model_service import ModelServiceRepository
+from app.models.digital_employee import DigitalEmployeeRepository
 
 
 def make_app():
@@ -84,6 +90,11 @@ def make_app():
             (r"/admin/api-interfaces/create", AdminAPIInterfaceCreateHandler),
             (r"/admin/api-interfaces/update/(\d+)", AdminAPIInterfaceUpdateHandler),
             (r"/admin/api-interfaces/delete/(\d+)", AdminAPIInterfaceDeleteHandler),
+            (r"/admin/digital-employees", AdminDigitalEmployeeListHandler),
+            (r"/admin/digital-employees/create", AdminDigitalEmployeeCreateHandler),
+            (r"/admin/digital-employees/update/(\d+)", AdminDigitalEmployeeUpdateHandler),
+            (r"/admin/digital-employees/delete/(\d+)", AdminDigitalEmployeeDeleteHandler),
+            (r"/admin/digital-employees/chat", AdminDigitalEmployeeChatHandler),
             (r"/admin/models", AdminModelListHandler),
             (r"/admin/models/create", AdminModelCreateHandler),
             (r"/admin/models/update/(\d+)", AdminModelUpdateHandler),
@@ -106,6 +117,7 @@ def make_app():
 if __name__ == "__main__":
     init_db()
     ModelServiceRepository.ensure_default_model()
+    DigitalEmployeeRepository.ensure_defaults()
     app = make_app()
     server = HTTPServer(app)
     server.bind(10087)

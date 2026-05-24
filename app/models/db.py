@@ -135,6 +135,23 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS digital_employees(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                alias TEXT NOT NULL UNIQUE,
+                description TEXT NOT NULL DEFAULT '',
+                employee_type TEXT NOT NULL DEFAULT 'model',
+                model_service_id INTEGER,
+                api_interface_id INTEGER,
+                prompt TEXT NOT NULL DEFAULT '',
+                config_json TEXT NOT NULL DEFAULT '{}',
+                is_enabled INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT(datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT(datetime('now'))
+            )
+            """
+        )
         _ensure_column(conn, "users", "role_id", "role_id INTEGER")
 
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
