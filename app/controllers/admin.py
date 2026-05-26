@@ -159,12 +159,6 @@ class AdminPermissionDeleteHandler(AdminBaseHandler):
 class AdminWatchSourceListHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def get(self):
-        interfaces = APIInterfaceRepository.list_interfaces()
-        self.render("admin/api_interfaces.html", title="接口管理", username=self.current_user, interfaces=interfaces)
-
-class AdminWatchSourceListHandler(AdminBaseHandler):
-    @tornado.web.authenticated
-    def get(self):
         sources = WatchtowerRepository.list_sources()
         if not sources:
             WatchtowerRepository.create_source({"name": "百度新闻", "source_code": "baidu_news", "entry_urls": ["https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_t_sk&tn=news&cl=2&medium=0&rtt=1&wd={关键词}", "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_b_pn&tn=news&cl=2&medium=0&rtt=1&wd={关键词}&pn={分页步进}"], "headers": {}, "keywords_label": "关键词", "page_param_name": "pn", "page_step": 10, "collect_limit": 10, "is_enabled": 1, "note": "百度新闻专用采集源，仅需填写关键词与起始页数"})
