@@ -180,6 +180,35 @@ class WatchtowerRepository:
         return int(total), rows
 
     @staticmethod
+    def list_records_filtered(page: int = 1, page_size: int = 20, keyword: str = None, source_id: int = None):
+        """支持关键词和来源筛选的查询"""
+        offset = (page - 1) * page_size
+        conditions = []
+        params = []
+        if keyword:
+            conditions.append("keyword LIKE ? OR title LIKE ?")
+            params.extend([f"%{keyword}%", f"%{keyword}%"])
+        if source_id:
+            conditions.append("source_id = ?")
+            params.append(source_id)
+
+        where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+        count_sql = f"select count(1) as c from watch_records{where_clause}"
+        data_sql = f"select * from watch_records{where_clause} order by id desc limit ? offset ?"
+        params.extend([page_size, offset])
+
+        with get_connection() as conn:
+            total = conn.execute(count_sql, params[:-2] if conditions else []).fetchone()["c"]
+            rows = conn.execute(data_sql, params).fetchall()
+        return int(total), rows
+
+    @staticmethod
+    def get_record(record_id: int):
+        """获取单条采集记录"""
+        with get_connection() as conn:
+            return conn.execute("select * from watch_records where id = ?", (record_id,)).fetchone()
+
+    @staticmethod
     def delete_record(record_id: int):
         with get_connection() as conn:
             conn.execute("delete from watch_records where id = ?", (record_id,))

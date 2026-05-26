@@ -24,6 +24,8 @@ from app.controllers.admin import (
     AdminUserListHandler,
     AdminUserResetPasswordHandler,
     AdminUserUpdateHandler,
+)
+from app.controllers.admin_watch import (
     AdminWatchCollectHandler,
     AdminWatchRecordBatchDeleteHandler,
     AdminWatchRecordDeleteHandler,
@@ -62,8 +64,8 @@ from app.controllers.home import IndexHandler
 from app.controllers._temp_a_portal_stubs import (
     TempPortalDigitalEmployeeHandler,
     TempPortalQueryHandler,
-    TempPortalWatchHandler,
 )
+from app.controllers.portal_watch import PortalWatchListHandler, PortalWatchDetailHandler
 from app.models.db import get_connection, init_db
 from app.models.model_service import ModelServiceRepository
 from app.models.digital_employee import DigitalEmployeeRepository
@@ -72,9 +74,15 @@ from app.models.user import UserRepository
 
 def ensure_demo_users():
     with get_connection() as conn:
-        row = conn.execute("select id from roles where code = 'normal_user'").fetchone()
-        if row and not UserRepository.get_user_by_username("user"):
-            UserRepository.create_user("user", "123456", row["id"])
+        # 创建默认管理员账号
+        admin_role = conn.execute("select id from roles where code = 'super_admin'").fetchone()
+        if admin_role and not UserRepository.get_user_by_username("admin"):
+            UserRepository.create_user("admin", "123456", admin_role["id"])
+        
+        # 创建默认普通用户
+        user_role = conn.execute("select id from roles where code = 'normal_user'").fetchone()
+        if user_role and not UserRepository.get_user_by_username("user"):
+            UserRepository.create_user("user", "123456", user_role["id"])
 
 
 def make_app():
@@ -94,9 +102,11 @@ def make_app():
             (r"/auth/login", LoginHandler),
             (r"/auth/register", RegisterHandler),
             (r"/auth/logout", LogoutHandler),
-            # 【临时路由 - 成员 A】待 C/E 实现正式页面后删除（D 数字员工已就位，stub 已移除）
+            # 【临时路由 - 成员 A】待 D/E 实现正式页面后删除
             (r"/portal/query", TempPortalQueryHandler),
-            (r"/portal/watch", TempPortalWatchHandler),
+            # 成员 C：智能瞭望用户侧路由
+            (r"/portal/watch", PortalWatchListHandler),
+            (r"/portal/watch/(\d+)", PortalWatchDetailHandler),
             (r"/admin/login", AdminLoginHandler),
             (r"/admin/logout", AdminLogoutHandler),
             (r"/admin/users", AdminUserListHandler),
