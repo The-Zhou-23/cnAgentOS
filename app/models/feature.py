@@ -39,8 +39,6 @@ class FeatureRepository:
 
     @staticmethod
     def get_enabled_features_for_role(role_code: str | None):
-        if not role_code:
-            return []
         with get_connection() as conn:
             return conn.execute(
                 "select * from features where is_enabled = 1 order by sort_no asc, id asc"

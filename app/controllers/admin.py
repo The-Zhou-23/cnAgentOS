@@ -90,19 +90,37 @@ class AdminUserDeleteHandler(AdminBaseHandler):
 class AdminUserResetPasswordHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def post(self, user_id):
+        user_id = int(user_id)
         password = (self.get_body_argument("password", "") or "").strip()
-        if password:
-            UserRepository.update_user_password_only(int(user_id), password)
+        if not password:
+            self.redirect("/admin/users")
+            return
+        user = UserRepository.get_user_by_id(user_id)
+        if not user:
+            self.redirect("/admin/users")
+            return
+        current_user_record = UserRepository.get_user_by_username(self.current_user)
+        current_role_code = UserRepository.get_role_code(current_user_record)
+        target_data = {"id": user_id, "role_code": user["role_code"] if user else None}
+        perms = UserRepository.can_manage_user(current_role_code, target_data, current_user_record["id"])
+        if perms["can_edit"] or (user["username"] == "admin" and current_role_code == "super_admin"):
+            UserRepository.update_user_password_only(user_id, password)
         self.redirect("/admin/users")
 
 class AdminUserBatchDeleteHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def post(self):
         ids = self.get_body_arguments("user_ids")
+        current_user_record = UserRepository.get_user_by_username(self.current_user)
+        current_role_code = UserRepository.get_role_code(current_user_record)
         filtered_ids = []
         for raw_id in ids:
             user = UserRepository.get_user_by_id(int(raw_id))
-            if user and user["username"] != "admin":
+            if not user:
+                continue
+            target_data = {"id": user["id"], "role_code": user["role_code"] if user else None}
+            perms = UserRepository.can_manage_user(current_role_code, target_data, current_user_record["id"])
+            if perms["can_delete"] and user["username"] != "admin":
                 filtered_ids.append(int(raw_id))
         UserRepository.batch_delete_users(filtered_ids)
         self.redirect("/admin/users")
