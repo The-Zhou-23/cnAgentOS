@@ -21,6 +21,14 @@
         .metric { font-size: 30px; font-weight: 800; line-height: 1; }
         @media (max-width: 992px) { .model-grid { grid-template-columns: 1fr; } }
         #streamBox { white-space: pre-wrap; background: #0b1020; color: #dbeafe; min-height: 220px; }
+        /* 内置轻量 modal（不依赖 bootstrap.bundle.js） */
+        .dlg-mask { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:1080; display:flex; align-items:center; justify-content:center; padding:24px; }
+        .dlg-card { background:#fff; width:min(720px, 100%); border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,.18); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+        .dlg-header { padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; }
+        .dlg-body { padding:18px 20px; overflow-y:auto; }
+        .dlg-footer { padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px; }
+        .btn-close-x { border:none; background:transparent; font-size:24px; line-height:1; cursor:pointer; color:#6b7280; }
+        .btn-close-x:hover { color:#111827; }
     </style>
 </head>
 <body class="admin-shell">
@@ -78,22 +86,89 @@
                     <div class="col-6"><div class="glass p-3"><div class="model-sub">今日 Token</div><div class="metric">{{ model['token_today'] }}</div></div></div>
                 </div>
                 <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-success model-test-btn" data-id="{{ model['id'] }}" data-name="{{ model['name'] }}">测试连通</button>
+                    <button type="button" class="btn btn-outline-secondary model-edit-btn" data-target="editModelModal-{{ model['id'] }}">编辑模型</button>
                     <form action="/admin/models/system/{{ model['id'] }}" method="post">{% module xsrf_form_html() %}<button class="btn btn-outline-primary w-100">设为系统模型</button></form>
-                    <form action="/admin/models/update/{{ model['id'] }}" method="post">{% module xsrf_form_html() %}
-                        <input type="hidden" name="name" value="{{ model['name'] }}">
-                        <input type="hidden" name="model_name" value="{{ model['model_name'] }}">
-                        <input type="hidden" name="base_url" value="{{ model['base_url'] }}">
-                        <input type="hidden" name="api_key" value="{{ model['api_key'] }}">
-                        <input type="hidden" name="conversation_prompt" value="{{ model['conversation_prompt'] }}">
-                        <input type="hidden" name="is_system" value="{% if model['is_system'] %}1{% else %}0{% end %}">
-                        <button class="btn btn-outline-secondary w-100">快速修改</button>
+                    <form action="/admin/models/delete/{{ model['id'] }}" method="post" onsubmit="return confirm('确认删除该模型？此操作不可恢复');">
+                        {% module xsrf_form_html() %}
+                        <button class="btn btn-outline-danger w-100">删除</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="dlg-mask" id="editModelModal-{{ model['id'] }}" style="display:none;">
+                <div class="dlg-card">
+                    <form action="/admin/models/update/{{ model['id'] }}" method="post">
+                        {% module xsrf_form_html() %}
+                        <div class="dlg-header">
+                            <h5 class="m-0">编辑模型 #{{ model['id'] }}</h5>
+                            <button type="button" class="btn-close-x dlg-close" aria-label="Close">×</button>
+                        </div>
+                        <div class="dlg-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">显示名称</label>
+                                    <input class="form-control" name="name" value="{{ model['name'] }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">模型 ID（model_name）</label>
+                                    <input class="form-control" name="model_name" value="{{ model['model_name'] }}" placeholder="例如 deepseek-v3" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Base URL</label>
+                                    <input class="form-control" name="base_url" value="{{ model['base_url'] }}" placeholder="https://aigc-api.aitoolcore.com/api/v1" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">API Key</label>
+                                    <input class="form-control" name="api_key" value="{{ model['api_key'] }}" placeholder="sk-..." autocomplete="off">
+                                    <div class="form-text">用于 Authorization: Bearer 头，留空则取 .env 的 MODEL_API_KEY。</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">系统级提示词</label>
+                                    <textarea class="form-control" name="conversation_prompt" rows="3">{{ model['conversation_prompt'] }}</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">设为系统默认</label>
+                                    <select class="form-select" name="is_system">
+                                        <option value="1" {% if model['is_system'] %}selected{% end %}>是</option>
+                                        <option value="0" {% if not model['is_system'] %}selected{% end %}>否</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dlg-footer">
+                            <button type="button" class="btn btn-outline-secondary dlg-close">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
                     </form>
                 </div>
             </div>
             {% end %}
         </div>
+
+        <div class="glass-strong card-soft mt-4">
+            <div class="badge-soft mb-2">新增模型服务</div>
+            <form action="/admin/models/create" method="post" class="row g-3">
+                {% module xsrf_form_html() %}
+                <div class="col-md-4"><label class="form-label">显示名称</label><input class="form-control" name="name" required></div>
+                <div class="col-md-4"><label class="form-label">模型 ID</label><input class="form-control" name="model_name" placeholder="deepseek-v3" required></div>
+                <div class="col-md-4"><label class="form-label">是否系统默认</label><select class="form-select" name="is_system"><option value="0">否</option><option value="1">是</option></select></div>
+                <div class="col-md-6"><label class="form-label">Base URL</label><input class="form-control" name="base_url" placeholder="https://aigc-api.aitoolcore.com/api/v1" required></div>
+                <div class="col-md-6"><label class="form-label">API Key</label><input class="form-control" name="api_key" placeholder="sk-..." autocomplete="off"></div>
+                <div class="col-12"><label class="form-label">系统级提示词</label><textarea class="form-control" name="conversation_prompt" rows="2"></textarea></div>
+                <div class="col-12"><button class="btn btn-dark">新增模型</button></div>
+            </form>
+        </div>
     </main>
 </div>
+<form id="xsrfHolder" style="display:none">{% module xsrf_form_html() %}</form>
+<div id="modelTestToast" style="position:fixed;right:24px;bottom:24px;max-width:460px;display:none;z-index:9999;">
+    <div class="card-soft" style="padding:14px 18px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 12px 36px rgba(15,23,42,.12);">
+        <div id="modelTestTitle" class="fw-semibold mb-1"></div>
+        <div id="modelTestBody" class="text-secondary small" style="white-space:pre-wrap;"></div>
+    </div>
+</div>
+<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
 <script>
 const form = document.getElementById('testForm');
 const streamBox = document.getElementById('streamBox');
@@ -121,7 +196,65 @@ form?.addEventListener('submit', async (e) => {
         }
     }
 });
+
+// 单卡测试连通
+(function () {
+    const tokenInput = document.querySelector('#xsrfHolder input[name="_xsrf"]');
+    const xsrf = tokenInput ? tokenInput.value : '';
+    const toast = document.getElementById('modelTestToast');
+    const titleEl = document.getElementById('modelTestTitle');
+    const bodyEl = document.getElementById('modelTestBody');
+    function showToast(title, body, ok) {
+        titleEl.textContent = title;
+        bodyEl.textContent = body || '';
+        toast.style.display = 'block';
+        toast.querySelector('.card-soft').style.borderLeft = '4px solid ' + (ok ? '#16a34a' : '#ef4444');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => { toast.style.display = 'none'; }, 7000);
+    }
+    document.querySelectorAll('.model-test-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const name = btn.dataset.name || ('#' + id);
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '测试中...';
+            try {
+                const fd = new FormData();
+                fd.append('_xsrf', xsrf);
+                const resp = await fetch('/admin/models/connectivity/' + id, { method: 'POST', body: fd });
+                const data = await resp.json();
+                showToast(
+                    (data.ok ? '✓ ' : '✗ ') + name + ' (' + data.elapsed_ms + 'ms, HTTP ' + data.status + ')',
+                    (data.message || '') + (data.content ? '\n\n模型回答：' + data.content : ''),
+                    !!data.ok
+                );
+            } catch (err) {
+                showToast('✗ 请求异常', String(err), false);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        });
+    });
+
+    // 内置 modal 开关
+    document.querySelectorAll('.model-edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = document.getElementById(btn.dataset.target);
+            if (target) target.style.display = 'flex';
+        });
+    });
+    document.querySelectorAll('.dlg-mask').forEach(mask => {
+        mask.addEventListener('click', (e) => {
+            if (e.target === mask) mask.style.display = 'none';
+        });
+        mask.querySelectorAll('.dlg-close').forEach(x => x.addEventListener('click', () => mask.style.display = 'none'));
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') document.querySelectorAll('.dlg-mask').forEach(m => m.style.display = 'none');
+    });
+})();
 </script>
-<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
 </body>
 </html>

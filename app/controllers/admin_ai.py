@@ -155,11 +155,20 @@ class AdminDigitalEmployeeChatHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def post(self):
         message = (self.get_body_argument("message", "") or "").strip()
+        history_raw = self.get_body_argument("history", "") or ""
+        history = []
+        if history_raw:
+            try:
+                parsed = json.loads(history_raw)
+                if isinstance(parsed, list):
+                    history = parsed
+            except Exception:
+                history = []
         self.set_header("Content-Type", "text/event-stream; charset=utf-8")
         self.set_header("Cache-Control", "no-cache")
         self.set_header("Connection", "keep-alive")
         self.flush()
-        for chunk in DigitalEmployeeRepository.chat_stream(message):
+        for chunk in DigitalEmployeeRepository.chat_stream(message, history=history):
             self.write(
                 f"data: {json.dumps({'message': chunk}, ensure_ascii=False)}\n\n"
             )
@@ -311,3 +320,13 @@ class AdminModelTestHandler(AdminBaseHandler):
         except Exception as exc:
             send(f"执行失败：{exc}")
         self.finish()
+
+
+class AdminModelConnectivityHandler(AdminBaseHandler):
+    """REQ-F-008：单个模型的连通性测试，返回 JSON。"""
+
+    @tornado.web.authenticated
+    def post(self, model_id):
+        result = ModelServiceRepository.test_connectivity(int(model_id))
+        self.set_header("Content-Type", "application/json; charset=utf-8")
+        self.write(json.dumps(result, ensure_ascii=False))

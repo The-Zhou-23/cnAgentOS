@@ -43,6 +43,7 @@ from app.controllers.admin_ai import (
     AdminDigitalEmployeeDeleteHandler,
     AdminDigitalEmployeeListHandler,
     AdminDigitalEmployeeUpdateHandler,
+    AdminModelConnectivityHandler,
     AdminModelCreateHandler,
     AdminModelDeleteHandler,
     AdminModelListHandler,
@@ -118,6 +119,7 @@ def make_app():
             (r"/admin/models/delete/(\d+)", AdminModelDeleteHandler),
             (r"/admin/models/system/(\d+)", AdminModelSystemHandler),
             (r"/admin/models/test", AdminModelTestHandler),
+            (r"/admin/models/connectivity/(\d+)", AdminModelConnectivityHandler),
             # 用户侧数字员工大厅（成员 D）
             (r"/portal/digital-employees", PortalDigitalEmployeeListHandler),
             (r"/portal/digital-employees/chat", PortalDigitalEmployeeChatHandler),

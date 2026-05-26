@@ -153,6 +153,13 @@ def init_db():
             """
         )
         _ensure_column(conn, "users", "role_id", "role_id INTEGER")
+        # 成员 D：token_today 跨日归零依赖此字段
+        _ensure_column(
+            conn,
+            "model_services",
+            "token_today_date",
+            "token_today_date TEXT NOT NULL DEFAULT ''",
+        )
 
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 0)", ("普通管理员", "normal_admin"))
