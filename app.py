@@ -46,8 +46,13 @@ from app.controllers.admin import (
     AdminWatchSourceListHandler,
     AdminWatchSourceUpdateHandler,
 )
-from app.controllers.auth import LoginHandler, LogoutHandler
+from app.controllers.auth import LoginHandler, LogoutHandler, RegisterHandler
 from app.controllers.home import IndexHandler
+from app.controllers._temp_a_portal_stubs import (
+    TempPortalDigitalEmployeeHandler,
+    TempPortalQueryHandler,
+    TempPortalWatchHandler,
+)
 from app.models.db import get_connection, init_db
 from app.models.model_service import ModelServiceRepository
 from app.models.digital_employee import DigitalEmployeeRepository
@@ -76,7 +81,12 @@ def make_app():
         [
             (r"/", IndexHandler),
             (r"/auth/login", LoginHandler),
+            (r"/auth/register", RegisterHandler),
             (r"/auth/logout", LogoutHandler),
+            # 【临时路由 - 成员 A】待 C/D/E 实现正式页面后删除
+            (r"/portal/query", TempPortalQueryHandler),
+            (r"/portal/watch", TempPortalWatchHandler),
+            (r"/portal/digital-employee", TempPortalDigitalEmployeeHandler),
             (r"/admin/login", AdminLoginHandler),
             (r"/admin/logout", AdminLogoutHandler),
             (r"/admin/users", AdminUserListHandler),
