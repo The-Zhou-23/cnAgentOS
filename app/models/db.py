@@ -170,6 +170,7 @@ def init_db():
             )
             """
         )
+        _ensure_column(conn, "features", "updated_at", "updated_at TEXT")
         conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("用户管理", "feature.user_management", "系统管理", "/admin/users", 10, 1))
         conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("角色管理", "feature.role_management", "系统管理", "/admin/roles", 20, 1))
         conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("权限管理", "feature.permission_management", "系统管理", "/admin/permissions", 30, 1))

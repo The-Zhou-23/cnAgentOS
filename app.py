@@ -5,6 +5,8 @@ import tornado.web
 from tornado.httpserver import HTTPServer
 
 from app.controllers.admin import (
+    AdminFeatureListHandler,
+    AdminFeatureUpdateHandler,
     AdminLoginHandler,
     AdminLogoutHandler,
     AdminPermissionCreateHandler,
@@ -140,6 +142,8 @@ def make_app():
             (r"/admin/watch-records", AdminWatchRecordListHandler),
             (r"/admin/watch-records/delete/(\d+)", AdminWatchRecordDeleteHandler),
             (r"/admin/watch-records/batch-delete", AdminWatchRecordBatchDeleteHandler),
+            (r"/admin/features", AdminFeatureListHandler),
+            (r"/admin/features/update/(\d+)", AdminFeatureUpdateHandler),
         ],
         **settings,
     )

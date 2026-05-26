@@ -32,6 +32,7 @@ class FeatureRepository:
                         feature_id,
                     ),
                 )
+                conn.commit()
             return True
         except sqlite3.IntegrityError:
             return False

@@ -114,6 +114,16 @@ class LoginHandler(BaseHandler):
                 login_type=login_type,
             )
 
+        if user["is_disabled"]:
+            self.set_status(403)
+            return self.render(
+                "login.html",
+                title="登录",
+                error="账号已被禁用，请联系管理员",
+                success=None,
+                login_type=login_type,
+            )
+
         role_code = UserRepository.get_role_code(user)
         is_admin = UserRepository.is_admin_role(role_code)
         is_normal_user = UserRepository.is_normal_user_role(role_code)

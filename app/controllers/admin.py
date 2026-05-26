@@ -66,7 +66,6 @@ class AdminUserUpdateHandler(AdminBaseHandler):
         current_role_code = UserRepository.get_role_code(current_user_record)
         target_user_data = {"id": user_id, "role_code": user["role_code"] if user else None}
         perms = UserRepository.can_manage_user(current_role_code, target_user_data, current_user_record["id"])
-        print(f"[DEBUG] user_id={user_id}, is_disabled_raw='{is_disabled_raw}', current_role_code={current_role_code}, target_role_code={user['role_code'] if user else None}, perms={perms}")
         if user and user["username"] == "admin":
             UserRepository.update_user_password_only(user_id, password)
         else:
@@ -74,9 +73,6 @@ class AdminUserUpdateHandler(AdminBaseHandler):
                 UserRepository.update_user(user_id, username, password or None, role_id)
             if is_disabled_raw in ("0", "1") and perms["can_disable"]:
                 UserRepository.disable_user(user_id, int(is_disabled_raw))
-                print(f"[DEBUG] disable_user called with user_id={user_id}, is_disabled={int(is_disabled_raw)}")
-            else:
-                print(f"[DEBUG] disable_user NOT called: is_disabled_raw in ('0','1')={is_disabled_raw in ('0', '1')}, can_disable={perms['can_disable']}")
         self.redirect("/admin/users")
 
 class AdminUserDeleteHandler(AdminBaseHandler):
