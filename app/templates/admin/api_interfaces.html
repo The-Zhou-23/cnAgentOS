@@ -82,6 +82,7 @@
                                         <input type="hidden" name="note" value="{{ item['note'] }}">
                                         <button class="btn btn-sm btn-outline-primary" type="submit">快速保存</button>
                                     </form>
+                                    <button type="button" class="btn btn-sm btn-outline-success api-test-btn" data-id="{{ item['id'] }}">测试连通</button>
                                     <form action="/admin/api-interfaces/delete/{{ item['id'] }}" method="post" onsubmit="return confirm('确认删除该接口？')">
                                         {% module xsrf_form_html() %}
                                         <button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
@@ -96,5 +97,55 @@
         </div>
     </main>
 </div>
+<form id="xsrfHolder" style="display:none">{% module xsrf_form_html() %}</form>
+<div id="apiTestToast" style="position:fixed;right:24px;bottom:24px;max-width:420px;display:none;z-index:9999;">
+    <div class="panel" style="padding:14px 18px;">
+        <div id="apiTestTitle" class="fw-semibold mb-1"></div>
+        <div id="apiTestBody" class="text-secondary small" style="white-space:pre-wrap;"></div>
+    </div>
+</div>
+<script>
+(function () {
+    const tokenInput = document.querySelector('#xsrfHolder input[name="_xsrf"]');
+    const xsrf = tokenInput ? tokenInput.value : '';
+    const toast = document.getElementById('apiTestToast');
+    const titleEl = document.getElementById('apiTestTitle');
+    const bodyEl = document.getElementById('apiTestBody');
+
+    function showToast(title, body, ok) {
+        titleEl.textContent = title;
+        bodyEl.textContent = body || '';
+        toast.style.display = 'block';
+        toast.querySelector('.panel').style.borderLeft = '4px solid ' + (ok ? '#16a34a' : '#ef4444');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => { toast.style.display = 'none'; }, 6000);
+    }
+
+    document.querySelectorAll('.api-test-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '测试中...';
+            try {
+                const fd = new FormData();
+                fd.append('_xsrf', xsrf);
+                const resp = await fetch('/admin/api-interfaces/test/' + id, { method: 'POST', body: fd });
+                const data = await resp.json();
+                showToast(
+                    (data.ok ? '✓ 连通成功' : '✗ 连通失败') + '（HTTP ' + data.status + '，' + data.elapsed_ms + 'ms）',
+                    (data.message || '') + (data.preview ? '\n\n' + data.preview : ''),
+                    !!data.ok
+                );
+            } catch (err) {
+                showToast('✗ 请求异常', String(err), false);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        });
+    });
+})();
+</script>
 </body>
 </html>
