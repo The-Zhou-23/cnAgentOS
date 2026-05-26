@@ -55,8 +55,13 @@ from app.controllers.portal_digital import (
     PortalDigitalEmployeeChatHandler,
     PortalDigitalEmployeeListHandler,
 )
-from app.controllers.auth import LoginHandler, LogoutHandler
+from app.controllers.auth import LoginHandler, LogoutHandler, RegisterHandler
 from app.controllers.home import IndexHandler
+from app.controllers._temp_a_portal_stubs import (
+    TempPortalDigitalEmployeeHandler,
+    TempPortalQueryHandler,
+    TempPortalWatchHandler,
+)
 from app.models.db import get_connection, init_db
 from app.models.model_service import ModelServiceRepository
 from app.models.digital_employee import DigitalEmployeeRepository
@@ -85,7 +90,11 @@ def make_app():
         [
             (r"/", IndexHandler),
             (r"/auth/login", LoginHandler),
+            (r"/auth/register", RegisterHandler),
             (r"/auth/logout", LogoutHandler),
+            # 【临时路由 - 成员 A】待 C/E 实现正式页面后删除（D 数字员工已就位，stub 已移除）
+            (r"/portal/query", TempPortalQueryHandler),
+            (r"/portal/watch", TempPortalWatchHandler),
             (r"/admin/login", AdminLoginHandler),
             (r"/admin/logout", AdminLogoutHandler),
             (r"/admin/users", AdminUserListHandler),
@@ -121,8 +130,8 @@ def make_app():
             (r"/admin/models/test", AdminModelTestHandler),
             (r"/admin/models/connectivity/(\d+)", AdminModelConnectivityHandler),
             # 用户侧数字员工大厅（成员 D）
-            (r"/portal/digital-employees", PortalDigitalEmployeeListHandler),
-            (r"/portal/digital-employees/chat", PortalDigitalEmployeeChatHandler),
+            (r"/portal/digital-employee", PortalDigitalEmployeeListHandler),
+            (r"/portal/digital-employee/chat", PortalDigitalEmployeeChatHandler),
             (r"/admin/watch-sources", AdminWatchSourceListHandler),
             (r"/admin/watch-sources/create", AdminWatchSourceCreateHandler),
             (r"/admin/watch-sources/update/(\d+)", AdminWatchSourceUpdateHandler),

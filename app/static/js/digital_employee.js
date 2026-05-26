@@ -103,7 +103,7 @@
             formData.append('message', message);
             formData.append('history', JSON.stringify(sentHistory));
             formData.append('_xsrf', getXsrf());
-            const resp = await fetch('/portal/digital-employees/chat', {
+            const resp = await fetch('/portal/digital-employee/chat', {
                 method: 'POST',
                 body: formData,
             });

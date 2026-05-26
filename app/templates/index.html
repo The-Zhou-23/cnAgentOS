@@ -1,91 +1,37 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
-    <style>
-        .user-shell { min-height: 100vh; padding: 24px; }
-        .user-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .welcome-card {
-            padding: 32px;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(255, 255, 255, 0.95));
-        }
-        .welcome-card h1 { font-size: 32px; font-weight: 800; margin-bottom: 10px; }
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 18px;
-        }
-        .feature-card {
-            padding: 24px;
-            height: 100%;
-        }
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(37, 99, 235, 0.10);
-            color: #2563eb;
-            font-size: 20px;
-            margin-bottom: 14px;
-        }
-        .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-        .feature-card p { color: #64748b; margin: 0; line-height: 1.7; }
-    </style>
-</head>
-<body class="admin-shell">
-<div class="user-shell">
-    <div class="user-header">
-        <div>
-            <div class="kicker"><i class="fas fa-home me-2"></i>用户门户</div>
-            <h1 class="title-large mb-0">cnAgentOS</h1>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <span class="badge-soft"><i class="fas fa-user me-2"></i>{{ username }} · {{ role_name }}</span>
-            <form action="/auth/logout" method="post" class="m-0">
-                {% module xsrf_form_html() %}
-                <button type="submit" class="btn btn-outline-secondary">退出登录</button>
-            </form>
-        </div>
-    </div>
+{% extends "portal_base.html" %}
 
-    <div class="glass-strong welcome-card">
-        <h1>你好，{{ username }}</h1>
-        <p class="subtitle mb-0">欢迎进入 cnAgentOS 用户门户。你可以在这里使用智能问数、数据瞭望等面向业务用户的能力。</p>
-    </div>
+{% block title %}用户首页 - cnAgentOS{% end %}
 
-    <div class="feature-grid">
-        <div class="glass-strong feature-card">
-            <div class="feature-icon"><i class="fas fa-comments"></i></div>
-            <h3>智能问数</h3>
-            <p>通过自然语言提问，快速获取业务数据答案与结构化结果。</p>
-        </div>
-        <div class="glass-strong feature-card">
-            <div class="feature-icon"><i class="fas fa-binoculars"></i></div>
-            <h3>智能瞭望</h3>
-            <p>浏览已采集的数据瞭望内容，掌握关键动态与资讯信息。</p>
-        </div>
-        <a href="/portal/digital-employees" class="glass-strong feature-card text-decoration-none text-reset">
-            <div class="feature-icon"><i class="fas fa-user-astronaut"></i></div>
-            <h3>数字员工</h3>
-            <p>与面向业务场景的数字助手交互，获得更贴近工作的智能服务。</p>
-        </a>
-    </div>
+{% block portal_content %}
+<div class="portal-page-head">
+    <div class="kicker"><i class="fas fa-home me-2"></i>用户门户</div>
+    <h1 class="title-large">你好，{{ username }}</h1>
+    <p class="subtitle">欢迎进入 cnAgentOS。请选择下方功能入口开始使用。</p>
 </div>
-</body>
-</html>
+
+<div class="glass-strong portal-welcome-card">
+    <h2>今日概览</h2>
+    <p class="mb-0">智能问数、数据瞭望与数字员工能力已接入导航，点击卡片即可进入对应模块。</p>
+</div>
+
+<div class="portal-feature-grid">
+    <a href="/portal/query" class="portal-feature-card glass-strong">
+        <div class="portal-feature-icon"><i class="fas fa-comments"></i></div>
+        <h3>智能问数</h3>
+        <p>通过自然语言提问，快速获取业务数据答案与结构化结果。</p>
+        <span class="portal-feature-link">进入问数 <i class="fas fa-arrow-right ms-1"></i></span>
+    </a>
+    <a href="/portal/watch" class="portal-feature-card glass-strong">
+        <div class="portal-feature-icon"><i class="fas fa-binoculars"></i></div>
+        <h3>智能瞭望</h3>
+        <p>浏览已采集的数据瞭望内容，掌握关键动态与资讯信息。</p>
+        <span class="portal-feature-link">进入瞭望 <i class="fas fa-arrow-right ms-1"></i></span>
+    </a>
+    <a href="/portal/digital-employee" class="portal-feature-card glass-strong">
+        <div class="portal-feature-icon"><i class="fas fa-user-astronaut"></i></div>
+        <h3>数字员工</h3>
+        <p>与面向业务场景的数字助手交互，获得更贴近工作的智能服务。</p>
+        <span class="portal-feature-link">进入助手 <i class="fas fa-arrow-right ms-1"></i></span>
+    </a>
+</div>
+{% end %}
