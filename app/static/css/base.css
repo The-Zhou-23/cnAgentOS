@@ -1,13 +1,30 @@
-/* 基础重置 */
-* {
+/* 成员 A：全站基础重置 */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
     margin: 0;
     padding: 0;
-}
-html,body {
-    height: 100%;
+    min-height: 100%;
     width: 100%;
 }
 
-.error{
-    color: red;
+.error,
+.text-error {
+    color: #ef4444;
+}
+
+.text-success {
+    color: #16a34a;
+}
+
+code {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.06);
+    font-size: 0.9em;
 }

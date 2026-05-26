@@ -5,23 +5,8 @@ import tornado.web
 from tornado.httpserver import HTTPServer
 
 from app.controllers.admin import (
-    AdminAPIInterfaceCreateHandler,
-    AdminAPIInterfaceDeleteHandler,
-    AdminAPIInterfaceListHandler,
-    AdminAPIInterfaceUpdateHandler,
-    AdminDigitalEmployeeChatHandler,
-    AdminDigitalEmployeeCreateHandler,
-    AdminDigitalEmployeeDeleteHandler,
-    AdminDigitalEmployeeListHandler,
-    AdminDigitalEmployeeUpdateHandler,
     AdminLoginHandler,
     AdminLogoutHandler,
-    AdminModelCreateHandler,
-    AdminModelDeleteHandler,
-    AdminModelListHandler,
-    AdminModelSystemHandler,
-    AdminModelTestHandler,
-    AdminModelUpdateHandler,
     AdminPermissionCreateHandler,
     AdminPermissionDeleteHandler,
     AdminPermissionListHandler,
@@ -46,8 +31,37 @@ from app.controllers.admin import (
     AdminWatchSourceListHandler,
     AdminWatchSourceUpdateHandler,
 )
-from app.controllers.auth import LoginHandler, LogoutHandler
+# 成员 D 独占：模型 + 接口 + 数字员工
+from app.controllers.admin_ai import (
+    AdminAPIInterfaceCreateHandler,
+    AdminAPIInterfaceDeleteHandler,
+    AdminAPIInterfaceListHandler,
+    AdminAPIInterfaceTestHandler,
+    AdminAPIInterfaceUpdateHandler,
+    AdminDigitalEmployeeChatHandler,
+    AdminDigitalEmployeeCreateHandler,
+    AdminDigitalEmployeeDeleteHandler,
+    AdminDigitalEmployeeListHandler,
+    AdminDigitalEmployeeUpdateHandler,
+    AdminModelConnectivityHandler,
+    AdminModelCreateHandler,
+    AdminModelDeleteHandler,
+    AdminModelListHandler,
+    AdminModelSystemHandler,
+    AdminModelTestHandler,
+    AdminModelUpdateHandler,
+)
+from app.controllers.portal_digital import (
+    PortalDigitalEmployeeChatHandler,
+    PortalDigitalEmployeeListHandler,
+)
+from app.controllers.auth import LoginHandler, LogoutHandler, RegisterHandler
 from app.controllers.home import IndexHandler
+from app.controllers._temp_a_portal_stubs import (
+    TempPortalDigitalEmployeeHandler,
+    TempPortalQueryHandler,
+    TempPortalWatchHandler,
+)
 from app.models.db import get_connection, init_db
 from app.models.model_service import ModelServiceRepository
 from app.models.digital_employee import DigitalEmployeeRepository
@@ -76,7 +90,11 @@ def make_app():
         [
             (r"/", IndexHandler),
             (r"/auth/login", LoginHandler),
+            (r"/auth/register", RegisterHandler),
             (r"/auth/logout", LogoutHandler),
+            # 【临时路由 - 成员 A】待 C/E 实现正式页面后删除（D 数字员工已就位，stub 已移除）
+            (r"/portal/query", TempPortalQueryHandler),
+            (r"/portal/watch", TempPortalWatchHandler),
             (r"/admin/login", AdminLoginHandler),
             (r"/admin/logout", AdminLogoutHandler),
             (r"/admin/users", AdminUserListHandler),
@@ -98,6 +116,7 @@ def make_app():
             (r"/admin/api-interfaces/create", AdminAPIInterfaceCreateHandler),
             (r"/admin/api-interfaces/update/(\d+)", AdminAPIInterfaceUpdateHandler),
             (r"/admin/api-interfaces/delete/(\d+)", AdminAPIInterfaceDeleteHandler),
+            (r"/admin/api-interfaces/test/(\d+)", AdminAPIInterfaceTestHandler),
             (r"/admin/digital-employees", AdminDigitalEmployeeListHandler),
             (r"/admin/digital-employees/create", AdminDigitalEmployeeCreateHandler),
             (r"/admin/digital-employees/update/(\d+)", AdminDigitalEmployeeUpdateHandler),
@@ -109,6 +128,10 @@ def make_app():
             (r"/admin/models/delete/(\d+)", AdminModelDeleteHandler),
             (r"/admin/models/system/(\d+)", AdminModelSystemHandler),
             (r"/admin/models/test", AdminModelTestHandler),
+            (r"/admin/models/connectivity/(\d+)", AdminModelConnectivityHandler),
+            # 用户侧数字员工大厅（成员 D）
+            (r"/portal/digital-employee", PortalDigitalEmployeeListHandler),
+            (r"/portal/digital-employee/chat", PortalDigitalEmployeeChatHandler),
             (r"/admin/watch-sources", AdminWatchSourceListHandler),
             (r"/admin/watch-sources/create", AdminWatchSourceCreateHandler),
             (r"/admin/watch-sources/update/(\d+)", AdminWatchSourceUpdateHandler),

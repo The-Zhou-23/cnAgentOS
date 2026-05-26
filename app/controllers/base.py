@@ -14,21 +14,40 @@ from app.models.rbac import RBACRepository
 
 
 class BaseHandler(tornado.web.RequestHandler):
-	# 公共类的用户态认证机制：
-	# - 框架会通过 xxxx() 的返回值来判断是否"已经登录"
-	# - 如果返回None 则 @tornado.web.authenticated 触发跳转到指定的路由url: login
-	def get_current_user(self):
-		# 返回当前登录用户的字符串 或 None
-		username = self.get_secure_cookie("username")
-		if not username:
-			return None
-		return username.decode('utf-8')
+    # 公共类的用户态认证机制：
+    # - 框架会通过 xxxx() 的返回值来判断是否"已经登录"
+    # - 如果返回None 则 @tornado.web.authenticated 触发跳转到指定的路由url: login
+    def get_current_user(self):
+        username = self.get_secure_cookie("username")
+        if not username:
+            return None
+        return username.decode("utf-8")
 
-	def get_current_user_record(self):
-		username = self.get_current_user()
-		if not username:
-			return None
-		return UserRepository.get_user_by_username(username)
+    def get_current_user_record(self):
+        username = self.get_current_user()
+        if not username:
+            return None
+        return UserRepository.get_user_by_username(username)
+
+    def get_current_role_name(self) -> str:
+        user = self.get_current_user_record()
+        if not user:
+            return "访客"
+        role_code = UserRepository.get_role_code(user)
+        if UserRepository.is_admin_role(role_code):
+            return "管理员"
+        if UserRepository.is_normal_user_role(role_code):
+            return "普通用户"
+        return "用户"
+
+    def render(self, template_name, **kwargs):
+        # 门户模板（portal_base.html）可选变量默认值，避免未传参时 NameError
+        kwargs.setdefault("portal_message", None)
+        kwargs.setdefault("portal_message_type", None)
+        kwargs.setdefault("active_nav", "")
+        if "role_name" not in kwargs and self.get_current_user():
+            kwargs.setdefault("role_name", self.get_current_role_name())
+        super().render(template_name, **kwargs)
 
 
 class AdminBaseHandler(BaseHandler):
@@ -43,38 +62,3 @@ class AdminBaseHandler(BaseHandler):
 		if not UserRepository.is_admin_role(role_code):
 			self.redirect("/")
 			self.finish()
-
-
-def require_permission(permission_code: str):
-	def decorator(method):
-		@functools.wraps(method)
-		def wrapper(self, *args, **kwargs):
-			username = self.get_current_user()
-			if not username:
-				self.redirect("/auth/login")
-				return
-			user = UserRepository.get_user_by_username(username)
-			role_code = UserRepository.get_role_code(user)
-			if role_code == "super_admin":
-				return method(self, *args, **kwargs)
-			if role_code == "normal_admin":
-				from app.models.db import get_connection
-				with get_connection() as conn:
-					perm_row = conn.execute("select id from permissions where code = ?", (permission_code,)).fetchone()
-					if not perm_row:
-						self.set_status(403)
-						return self.render("admin/403.html", title="无权限", username=username)
-					perm_id = perm_row["id"]
-					role_row = conn.execute("select id from roles where code = ?", (role_code,)).fetchone()
-					if not role_row:
-						self.set_status(403)
-						return self.render("admin/403.html", title="无权限", username=username)
-					has_perm = RBACRepository.get_role_permissions(role_row["id"])
-					if perm_id in has_perm:
-						return method(self, *args, **kwargs)
-				self.set_status(403)
-				return self.render("admin/403.html", title="无权限", username=username)
-			self.set_status(403)
-			return self.render("admin/403.html", title="无权限", username=username)
-		return wrapper
-	return decorator

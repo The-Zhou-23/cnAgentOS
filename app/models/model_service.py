@@ -1,6 +1,31 @@
+"""成员 D 独占：模型引擎仓储层。
+
+对外稳定 API（供 E 等其他成员调用，签名与返回结构在任务一周期内不变）：
+
+- ``ModelServiceRepository.chat(model_id: int, messages: list[dict], stream: bool=False) -> str``
+    阻塞式调用 OpenAI 兼容 ``/chat/completions``，返回原始响应文本（JSON 字符串）。
+
+- ``ModelServiceRepository.stream_chat(model_id: int, messages: list[dict]) -> Iterator[str]``
+    流式调用，逐行 yield ``data: {...}`` / 心跳行；调用方自行解析 OpenAI 增量。
+
+- ``ModelServiceRepository.get_system_model() -> sqlite3.Row | None``
+    获取当前 ``is_system=1`` 的系统默认模型。
+
+- ``ModelServiceRepository.update_tokens(model_id, prompt_tokens, completion_tokens) -> None``
+    Token 累计（``token_total`` 始终递增；``token_today`` 跨日自动归零再累计）。
+
+- ``ModelServiceRepository.test_connectivity(model_id: int) -> dict``
+    发送一条 hello 探测目标模型连通性，返回 ``{ok, status, message, elapsed_ms, content}``。
+
+- ``DigitalEmployeeRepository.chat_stream(message, history=None) -> Iterator[str]``
+    见 ``digital_employee.py``。@别名路由 + 多轮上下文。
+"""
+
 import json
 import os
 import sqlite3
+import time
+from datetime import date
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -132,17 +157,32 @@ class ModelServiceRepository:
 
     @staticmethod
     def update_tokens(model_id: int, prompt_tokens: int = 0, completion_tokens: int = 0):
+        """累计 Token；``token_today`` 在跨日时自动归零，再累加当次量。"""
         total_tokens = prompt_tokens + completion_tokens
+        today = date.today().isoformat()
         with get_connection() as conn:
+            row = conn.execute(
+                "select token_today, token_today_date from model_services where id = ?",
+                (model_id,),
+            ).fetchone()
+            if not row:
+                return
+            stored_date = (row["token_today_date"] if "token_today_date" in row.keys() else "") or ""
+            if stored_date != today:
+                conn.execute(
+                    "update model_services set token_today = 0, token_today_date = ? where id = ?",
+                    (today, model_id),
+                )
             conn.execute(
                 """
                 update model_services set
                     token_total = token_total + ?,
                     token_today = token_today + ?,
+                    token_today_date = ?,
                     updated_at = datetime('now')
                 where id = ?
                 """,
-                (total_tokens, total_tokens, model_id),
+                (total_tokens, total_tokens, today, model_id),
             )
 
     @staticmethod
@@ -227,3 +267,74 @@ class ModelServiceRepository:
         if not m:
             return None
         return {"action": "collect_baidu_news", "keyword": m.group(1).strip(), "count": int(m.group(2)), "start_page": 0}
+
+    @staticmethod
+    def test_connectivity(model_id: int) -> dict:
+        """REQ-F-008：发送一条最小请求，验证模型 API 是否连通。
+
+        返回结构：``{ok, status, message, elapsed_ms, content}``。
+        """
+        model = ModelServiceRepository.get_model(model_id)
+        if not model:
+            return {"ok": False, "status": 0, "message": "模型不存在", "elapsed_ms": 0}
+        messages = [
+            {"role": "system", "content": "你是连通性测试助手，请用一句话回应。"},
+            {"role": "user", "content": "ping"},
+        ]
+        started = time.time()
+        try:
+            _, request = ModelServiceRepository._build_request(model_id, messages, stream=False)
+            with urlopen(request, timeout=20) as resp:
+                code = getattr(resp, "status", 200)
+                raw = resp.read().decode("utf-8", errors="ignore")
+            content = ""
+            try:
+                payload = json.loads(raw)
+                content = (
+                    ((payload.get("choices") or [{}])[0].get("message") or {}).get("content")
+                    or ""
+                ).strip()
+                usage = payload.get("usage") or {}
+                if usage:
+                    ModelServiceRepository.update_tokens(
+                        model_id,
+                        prompt_tokens=int(usage.get("prompt_tokens", 0) or 0),
+                        completion_tokens=int(usage.get("completion_tokens", 0) or 0),
+                    )
+            except Exception:
+                content = raw[:200]
+            return {
+                "ok": 200 <= int(code) < 400,
+                "status": int(code),
+                "message": "连通成功" if 200 <= int(code) < 400 else "连通失败",
+                "elapsed_ms": int((time.time() - started) * 1000),
+                "content": content[:500],
+            }
+        except HTTPError as exc:
+            try:
+                detail = exc.read().decode("utf-8", errors="ignore")[:300]
+            except Exception:
+                detail = ""
+            return {
+                "ok": False,
+                "status": exc.code,
+                "message": f"HTTP {exc.code}：{exc.reason}",
+                "elapsed_ms": int((time.time() - started) * 1000),
+                "content": detail,
+            }
+        except URLError as exc:
+            return {
+                "ok": False,
+                "status": 0,
+                "message": f"网络错误：{exc.reason}",
+                "elapsed_ms": int((time.time() - started) * 1000),
+                "content": "",
+            }
+        except Exception as exc:
+            return {
+                "ok": False,
+                "status": 0,
+                "message": f"调用失败：{exc}",
+                "elapsed_ms": int((time.time() - started) * 1000),
+                "content": "",
+            }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - cnAgentOS</title>
+    {% include "_portal_assets.html" %}
+    <link rel="stylesheet" href="{{ static_url('css/base.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-wrap">
+        <section class="auth-hero">
+            <div class="kicker"><i class="fas fa-user-plus me-2"></i>新用户注册</div>
+            <h1>创建普通用户账号</h1>
+            <p>注册成功后将自动分配「普通用户」角色，并可直接登录用户门户。</p>
+            <ul class="auth-policy-list">
+                <li>用户名：3～20 位字母、数字或下划线</li>
+                <li>密码：6～32 位，须同时包含字母与数字</li>
+            </ul>
+        </section>
+        <section class="auth-panel glass-strong">
+            <div class="auth-title">账号注册</div>
+            <div class="auth-subtitle">请填写以下信息完成注册</div>
+
+            {% if error %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+            {% end %}
+
+            <form method="post" action="/auth/register" id="registerForm" novalidate>
+                {% module xsrf_form_html() %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="username">用户名</label>
+                    <input class="form-control form-control-lg" id="username" name="username"
+                           value="{{ form.get('username', '') if form else '' }}"
+                           placeholder="例如：zhangsan" autocomplete="username" required
+                           pattern="[A-Za-z0-9_]{3,20}" title="3～20 位字母、数字或下划线">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="password">密码</label>
+                    <input class="form-control form-control-lg" id="password" type="password" name="password"
+                           placeholder="至少 6 位，含字母和数字" autocomplete="new-password" required
+                           minlength="6" maxlength="32">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-semibold" for="confirm_password">确认密码</label>
+                    <input class="form-control form-control-lg" id="confirm_password" type="password"
+                           name="confirm_password" placeholder="再次输入密码" autocomplete="new-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">注册并进入首页</button>
+            </form>
+
+            <div class="auth-footer-links">
+                <span>已有账号？</span>
+                <a href="/auth/login">返回登录</a>
+            </div>
+        </section>
+    </div>
+
+    <script src="{{ static_url('js/base.js') }}"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
+            const pwd = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            if (pwd !== confirm) {
+                e.preventDefault();
+                alert('两次输入的密码不一致');
+            }
+        });
+    </script>
+</body>
+</html>
