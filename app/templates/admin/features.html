@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
+</head>
+<body class="admin-shell">
+<div class="page-shell">
+{% set active_page = 'features' %}
+{% include "_sidebar.html" %}
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <h1 class="title-large">功能管理</h1>
+                <div class="subtitle">管理菜单项的显示、排序与启用状态</div>
+            </div>
+            <div class="badge-soft"><i class="fas fa-th-large me-2"></i>菜单功能配置</div>
+        </div>
+
+        <div class="glass-strong card-soft">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr><th>ID</th><th>菜单分组</th><th>名称</th><th>编码</th><th>路由路径</th><th>排序</th><th>状态</th><th style="width:200px;">操作</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for f in features %}
+                    <tr>
+                        <td class="text-secondary">#{{ f['id'] }}</td>
+                        <td><span class="badge-soft">{{ f['menu_group'] }}</span></td>
+                        <td class="fw-semibold">{{ f['name'] }}</td>
+                        <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ f['code'] }}</span></td>
+                        <td><span class="text-secondary">{{ f['route_path'] }}</span></td>
+                        <td>{{ f['sort_no'] }}</td>
+                        <td>
+                            {% if f['is_enabled'] %}
+                            <span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-check-circle me-1"></i>启用</span>
+                            {% else %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fas fa-ban me-1"></i>禁用</span>
+                            {% end %}
+                        </td>
+                        <td>
+                            <form action="/admin/features/update/{{ f['id'] }}" method="post" class="d-inline">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="name" value="{{ f['name'] }}">
+                                <input type="hidden" name="route_path" value="{{ f['route_path'] }}">
+                                <input type="hidden" name="sort_no" value="{{ f['sort_no'] }}">
+                                <input type="hidden" name="is_enabled" value="{{ 0 if f['is_enabled'] else 1 }}">
+                                <button class="btn btn-sm {% if f['is_enabled'] %}btn-outline-warning{% else %}btn-outline-success{% end %}">
+                                    {% if f['is_enabled'] %}禁用{% else %}启用{% end %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% end %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+</body>
+</html>

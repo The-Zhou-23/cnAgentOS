@@ -22,6 +22,7 @@
             <div class="badge-soft"><i class="fas fa-shield-halved me-2"></i>默认系统角色：超级管理员</div>
         </div>
 
+        {% if current_role_code == 'super_admin' %}
         <div class="glass-strong card-soft mb-4">
             <form action="/admin/roles/create" method="post" class="row g-3 align-items-end">
                 {% module xsrf_form_html() %}
@@ -30,6 +31,7 @@
                 <div class="col-md-4 d-grid"><button class="btn btn-primary"><i class="fas fa-plus me-2"></i>新增角色</button></div>
             </form>
         </div>
+        {% end %}
 
         <div class="glass-strong card-soft">
             <div class="table-responsive">
@@ -43,8 +45,9 @@
                         <td class="text-secondary">#{{ role['id'] }}</td>
                         <td class="fw-semibold">{{ role['name'] }}</td>
                         <td><span class="badge-soft">{{ role['code'] }}</span></td>
-                        <td>{% if role['is_system'] %}<span class="badge-soft">是</span>{% else %}<span class="badge-soft">否</span>{% end %}</td>
+                        <td>{% if role['is_system'] %}<span class="badge-soft"><i class="fas fa-lock me-1"></i>是</span>{% else %}<span class="badge-soft">否</span>{% end %}</td>
                         <td>
+                            {% if current_role_code == 'super_admin' %}
                             <form action="/admin/roles/permissions/{{ role['id'] }}" method="post" class="d-flex flex-wrap gap-2">
                                 {% module xsrf_form_html() %}
                                 {% for p in permissions %}
@@ -55,9 +58,18 @@
                                 {% end %}
                                 <button class="btn btn-sm btn-outline-primary">保存权限</button>
                             </form>
+                            {% else %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for p in permissions %}
+                                {% if p['id'] in role_permissions[role['id']] %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary">{{ p['name'] }}</span>
+                                {% end %}
+                                {% end %}
+                            </div>
+                            {% end %}
                         </td>
                         <td>
-                            {% if not role['is_system'] %}
+                            {% if not role['is_system'] and current_role_code == 'super_admin' %}
                             <form action="/admin/roles/update/{{ role['id'] }}" method="post" class="d-inline">
                                 {% module xsrf_form_html() %}
                                 <input type="hidden" name="name" value="{{ role['name'] }}">
@@ -68,8 +80,10 @@
                                 {% module xsrf_form_html() %}
                                 <button class="btn btn-sm btn-outline-danger">删除</button>
                             </form>
+                            {% elif role['is_system'] %}
+                            <span class="badge-soft"><i class="fas fa-lock me-1"></i>系统默认角色</span>
                             {% else %}
-                            <span class="badge-soft">系统默认角色</span>
+                            <span class="text-secondary">无权限操作</span>
                             {% end %}
                         </td>
                     </tr>

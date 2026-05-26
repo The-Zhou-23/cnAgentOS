@@ -76,7 +76,7 @@ class UserRepository:
     def get_user_by_username(username: str):
         with get_connection() as conn:
             row = conn.execute(
-                "select id, username, password_hash, salt, role_id from users where username = ?",
+                "select id, username, password_hash, salt, role_id, is_disabled from users where username = ?",
                 (username,),
             ).fetchone()
         return row
@@ -85,7 +85,7 @@ class UserRepository:
     def get_user_by_id(user_id: int):
         with get_connection() as conn:
             row = conn.execute(
-                "select id, username, password_hash, salt, role_id from users where id = ?",
+                "select u.id, u.username, u.password_hash, u.salt, u.role_id, u.is_disabled, r.code as role_code from users u left join roles r on u.role_id = r.id where u.id = ?",
                 (user_id,),
             ).fetchone()
         return row
@@ -122,18 +122,51 @@ class UserRepository:
         return role_code == "normal_user"
 
     @staticmethod
-    def list_users(page: int = 1, page_size: int = 20):
+    def list_users(page: int = 1, page_size: int = 20, username: str = "", role_name: str = ""):
         offset = (page - 1) * page_size
         with get_connection() as conn:
-            total = conn.execute("select count(1) as c from users").fetchone()["c"]
-            rows = conn.execute(
-                """
-                select u.id, u.username, u.role_id, u.create_at, r.name as role_name, r.code as role_code
+            conditions = []
+            params = []
+            if username:
+                conditions.append("u.username LIKE ?")
+                params.append(f"%{username}%")
+            if role_name:
+                conditions.append("r.name LIKE ?")
+                params.append(f"%{role_name}%")
+            where = " AND ".join(conditions) if conditions else "1=1"
+            count_sql = f"""
+                select count(1) as c from users u
+                left join roles r on u.role_id = r.id
+                where {where}
+            """
+            total = conn.execute(count_sql, params).fetchone()["c"]
+            data_sql = f"""
+                select u.id, u.username, u.role_id, u.is_disabled, u.create_at, r.name as role_name, r.code as role_code
                 from users u
                 left join roles r on u.role_id = r.id
+                where {where}
                 order by u.id desc
                 limit ? offset ?
-                """,
-                (page_size, offset),
-            ).fetchall()
+            """
+            rows = conn.execute(data_sql, params + [page_size, offset]).fetchall()
         return int(total), rows
+
+    @staticmethod
+    def disable_user(user_id: int, is_disabled: int) -> None:
+        with get_connection() as conn:
+            conn.execute("update users set is_disabled = ? where id = ?", (is_disabled, user_id))
+            conn.commit()
+
+    @staticmethod
+    def can_manage_user(operator_role_code: str | None, target_user_row, operator_user_id: int) -> dict:
+        if operator_role_code == "super_admin":
+            return {"can_edit": True, "can_delete": True, "can_disable": True}
+        if operator_role_code == "normal_admin":
+            target_role_code = target_user_row["role_code"] if target_user_row else None
+            target_user_id = target_user_row["id"] if target_user_row else None
+            if target_role_code != "normal_user":
+                return {"can_edit": False, "can_delete": False, "can_disable": False}
+            if target_user_id == operator_user_id:
+                return {"can_edit": False, "can_delete": False, "can_disable": False}
+            return {"can_edit": False, "can_delete": False, "can_disable": True}
+        return {"can_edit": False, "can_delete": False, "can_disable": False}

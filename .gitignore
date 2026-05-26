@@ -41,3 +41,6 @@ logs/
 
 # Static files from packages
 app/static/dist/
+
+# 本地自用，不提交
+test-self/

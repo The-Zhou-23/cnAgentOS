@@ -7,6 +7,9 @@
         <a href="/admin/users" class="{% if active_page == 'users' %}active{% end %}"><i class="fas fa-users"></i>用户管理</a>
         <a href="/admin/roles" class="{% if active_page == 'roles' %}active{% end %}"><i class="fas fa-user-shield"></i>角色管理</a>
         <a href="/admin/permissions" class="{% if active_page == 'permissions' %}active{% end %}"><i class="fas fa-sitemap"></i>权限管理</a>
+        {% if current_role_code and (current_role_code == 'normal_admin' or current_role_code == 'super_admin') %}
+        <a href="/admin/features" class="{% if active_page == 'features' %}active{% end %}"><i class="fas fa-th-large"></i>功能管理</a>
+        {% end %}
         <a href="/admin/api-interfaces" class="{% if active_page == 'api_interfaces' %}active{% end %}"><i class="fas fa-plug"></i>接口管理</a>
         <a href="/admin/digital-employees" class="{% if active_page == 'digital_employees' %}active{% end %}"><i class="fas fa-user-astronaut"></i>数字员工</a>
         <a href="/admin/watch-sources" class="{% if active_page == 'watch_sources' %}active{% end %}"><i class="fas fa-layer-group"></i>百度新闻采集</a>

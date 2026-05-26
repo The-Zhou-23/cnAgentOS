@@ -18,12 +18,28 @@
         <div class="topbar">
             <div>
                 <h1 class="title-large">用户管理</h1>
-                <div class="subtitle">支持新增、修改、删除、批量删除与分页管理</div>
+                <div class="subtitle">支持搜索、新增、修改、启用/禁用、删除与分页管理</div>
             </div>
             <div class="badge-soft"><i class="fas fa-user me-2"></i>当前登录用户：{{ username }}</div>
         </div>
 
         <div class="glass-strong card-soft mb-4">
+            <form action="/admin/users" method="get" class="row g-3 align-items-end mb-3">
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <label class="form-label fw-semibold">用户名</label>
+                    <input class="form-control" name="username" placeholder="请输入用户名" value="{{ search_username }}">
+                </div>
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <label class="form-label fw-semibold">角色名</label>
+                    <input class="form-control" name="role_name" placeholder="请输入角色名" value="{{ search_role_name }}">
+                </div>
+                <div class="col-xl-3 col-lg-4 col-md-6 d-grid">
+                    <button class="btn btn-primary"><i class="fas fa-search me-2"></i>搜索</button>
+                </div>
+                <div class="col-xl-3 col-lg-12 col-md-6">
+                    <a href="/admin/users" class="btn btn-outline-secondary w-100"><i class="fas fa-redo me-2"></i>重置</a>
+                </div>
+            </form>
             <form action="/admin/users/create" method="post" class="row g-3 align-items-end">
                 {% module xsrf_form_html() %}
                 <div class="col-xl-3 col-lg-4 col-md-6">
@@ -43,9 +59,11 @@
                         {% end %}
                     </select>
                 </div>
+                {% if current_role_code == 'super_admin' %}
                 <div class="col-xl-3 col-lg-12 col-md-6 d-grid">
                     <button class="btn btn-primary"><i class="fas fa-plus me-2"></i>新增用户</button>
                 </div>
+                {% end %}
             </form>
         </div>
 
@@ -54,16 +72,21 @@
                 {% module xsrf_form_html() %}
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="badge-soft">共 {{ total }} 条记录</div>
+                    {% if current_role_code == 'super_admin' %}
                     <button class="btn btn-outline-danger"><i class="fas fa-trash me-2"></i>批量删除</button>
+                    {% end %}
                 </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead>
                             <tr>
+                                {% if current_role_code == 'super_admin' %}
                                 <th style="width:44px;"><input type="checkbox" id="checkAll"></th>
+                                {% end %}
                                 <th style="width:90px;">ID</th>
                                 <th>用户名</th>
                                 <th>角色</th>
+                                <th>状态</th>
                                 <th>创建时间</th>
                                 <th style="width:280px;">操作</th>
                             </tr>
@@ -71,22 +94,60 @@
                         <tbody>
                             {% for user in users %}
                             <tr>
+                                {% if current_role_code == 'super_admin' %}
                                 <td><input type="checkbox" name="user_ids" value="{{ user['id'] }}" {% if user['username'] == 'admin' %}disabled{% end %}></td>
+                                {% end %}
                                 <td class="text-secondary">#{{ user['id'] }}</td>
                                 <td class="fw-semibold">{{ user['username'] }}</td>
                                 <td><span class="badge-soft">{% if user['role_name'] %}{{ user['role_name'] }}{% else %}未分配{% end %}</span></td>
+                                <td>
+                                    {% if user['is_disabled'] %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fas fa-ban me-1"></i>已禁用</span>
+                                    {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-check-circle me-1"></i>正常</span>
+                                    {% end %}
+                                </td>
                                 <td class="text-secondary">{{ user['create_at'] }}</td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-2">
                                     {% if user['username'] == 'admin' %}
                                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#resetModal{{ user['id'] }}">重置密码</button>
                                     {% else %}
+                                        {% if current_role_code == 'super_admin' %}
                                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ user['id'] }}">修改信息</button>
                                         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resetModal{{ user['id'] }}">重置密码</button>
+                                        {% if user['is_disabled'] %}
+                                        <form action="/admin/users/update/{{ user['id'] }}" method="post" class="m-0">
+                                            {% module xsrf_form_html() %}
+                                            <input type="hidden" name="is_disabled" value="0">
+                                            <button class="btn btn-sm btn-outline-success">启用</button>
+                                        </form>
+                                        {% else %}
+                                        <form action="/admin/users/update/{{ user['id'] }}" method="post" class="m-0">
+                                            {% module xsrf_form_html() %}
+                                            <input type="hidden" name="is_disabled" value="1">
+                                            <button class="btn btn-sm btn-outline-warning">禁用</button>
+                                        </form>
+                                        {% end %}
                                         <form action="/admin/users/delete/{{ user['id'] }}" method="post" class="m-0" onsubmit="return confirm('确认删除用户？')">
                                             {% module xsrf_form_html() %}
                                             <button class="btn btn-sm btn-outline-danger">删除</button>
                                         </form>
+                                        {% elif current_role_code == 'normal_admin' and user['role_code'] == 'normal_user' and user['id'] != current_user_id %}
+                                        {% if user['is_disabled'] %}
+                                        <form action="/admin/users/update/{{ user['id'] }}" method="post" class="m-0">
+                                            {% module xsrf_form_html() %}
+                                            <input type="hidden" name="is_disabled" value="0">
+                                            <button class="btn btn-sm btn-outline-success">启用</button>
+                                        </form>
+                                        {% else %}
+                                        <form action="/admin/users/update/{{ user['id'] }}" method="post" class="m-0">
+                                            {% module xsrf_form_html() %}
+                                            <input type="hidden" name="is_disabled" value="1">
+                                            <button class="btn btn-sm btn-outline-warning">禁用</button>
+                                        </form>
+                                        {% end %}
+                                        {% end %}
                                     {% end %}
                                     </div>
                                 </td>
@@ -98,9 +159,9 @@
             </form>
             <nav class="mt-4">
                 <ul class="pagination mb-0">
-                    <li class="page-item {% if not has_prev %}disabled{% end %}"><a class="page-link" href="/admin/users?page={{ page - 1 }}">上一页</a></li>
+                    <li class="page-item {% if not has_prev %}disabled{% end %}"><a class="page-link" href="?page={{ page - 1 }}{% if search_username %}&username={{ search_username }}{% end %}{% if search_role_name %}&role_name={{ search_role_name }}{% end %}">上一页</a></li>
                     <li class="page-item disabled"><span class="page-link">第 {{ page }} / {{ total_pages }} 页，共 {{ total }} 条</span></li>
-                    <li class="page-item {% if not has_next %}disabled{% end %}"><a class="page-link" href="/admin/users?page={{ page + 1 }}">下一页</a></li>
+                    <li class="page-item {% if not has_next %}disabled{% end %}"><a class="page-link" href="?page={{ page + 1 }}{% if search_username %}&username={{ search_username }}{% end %}{% if search_role_name %}&role_name={{ search_role_name }}{% end %}">下一页</a></li>
                 </ul>
             </nav>
         </div>

@@ -153,6 +153,27 @@ def init_db():
             """
         )
         _ensure_column(conn, "users", "role_id", "role_id INTEGER")
+        _ensure_column(conn, "users", "is_disabled", "is_disabled INTEGER NOT NULL DEFAULT 0")
+
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS features(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                code TEXT NOT NULL UNIQUE,
+                menu_group TEXT NOT NULL DEFAULT '系统管理',
+                route_path TEXT NOT NULL,
+                sort_no INTEGER NOT NULL DEFAULT 0,
+                is_enabled INTEGER NOT NULL DEFAULT 1,
+                create_at TEXT NOT NULL DEFAULT(datetime('now')),
+                updated_at TEXT
+            )
+            """
+        )
+        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("用户管理", "feature.user_management", "系统管理", "/admin/users", 10, 1))
+        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("角色管理", "feature.role_management", "系统管理", "/admin/roles", 20, 1))
+        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("权限管理", "feature.permission_management", "系统管理", "/admin/permissions", 30, 1))
+        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("功能管理", "feature.feature_management", "系统管理", "/admin/features", 40, 1))
 
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 0)", ("普通管理员", "normal_admin"))
