@@ -5,23 +5,8 @@ import tornado.web
 from tornado.httpserver import HTTPServer
 
 from app.controllers.admin import (
-    AdminAPIInterfaceCreateHandler,
-    AdminAPIInterfaceDeleteHandler,
-    AdminAPIInterfaceListHandler,
-    AdminAPIInterfaceUpdateHandler,
-    AdminDigitalEmployeeChatHandler,
-    AdminDigitalEmployeeCreateHandler,
-    AdminDigitalEmployeeDeleteHandler,
-    AdminDigitalEmployeeListHandler,
-    AdminDigitalEmployeeUpdateHandler,
     AdminLoginHandler,
     AdminLogoutHandler,
-    AdminModelCreateHandler,
-    AdminModelDeleteHandler,
-    AdminModelListHandler,
-    AdminModelSystemHandler,
-    AdminModelTestHandler,
-    AdminModelUpdateHandler,
     AdminPermissionCreateHandler,
     AdminPermissionDeleteHandler,
     AdminPermissionListHandler,
@@ -45,6 +30,29 @@ from app.controllers.admin import (
     AdminWatchSourceDeleteHandler,
     AdminWatchSourceListHandler,
     AdminWatchSourceUpdateHandler,
+)
+# 成员 D 独占：模型 + 接口 + 数字员工
+from app.controllers.admin_ai import (
+    AdminAPIInterfaceCreateHandler,
+    AdminAPIInterfaceDeleteHandler,
+    AdminAPIInterfaceListHandler,
+    AdminAPIInterfaceTestHandler,
+    AdminAPIInterfaceUpdateHandler,
+    AdminDigitalEmployeeChatHandler,
+    AdminDigitalEmployeeCreateHandler,
+    AdminDigitalEmployeeDeleteHandler,
+    AdminDigitalEmployeeListHandler,
+    AdminDigitalEmployeeUpdateHandler,
+    AdminModelCreateHandler,
+    AdminModelDeleteHandler,
+    AdminModelListHandler,
+    AdminModelSystemHandler,
+    AdminModelTestHandler,
+    AdminModelUpdateHandler,
+)
+from app.controllers.portal_digital import (
+    PortalDigitalEmployeeChatHandler,
+    PortalDigitalEmployeeListHandler,
 )
 from app.controllers.auth import LoginHandler, LogoutHandler
 from app.controllers.home import IndexHandler
@@ -98,6 +106,7 @@ def make_app():
             (r"/admin/api-interfaces/create", AdminAPIInterfaceCreateHandler),
             (r"/admin/api-interfaces/update/(\d+)", AdminAPIInterfaceUpdateHandler),
             (r"/admin/api-interfaces/delete/(\d+)", AdminAPIInterfaceDeleteHandler),
+            (r"/admin/api-interfaces/test/(\d+)", AdminAPIInterfaceTestHandler),
             (r"/admin/digital-employees", AdminDigitalEmployeeListHandler),
             (r"/admin/digital-employees/create", AdminDigitalEmployeeCreateHandler),
             (r"/admin/digital-employees/update/(\d+)", AdminDigitalEmployeeUpdateHandler),
@@ -109,6 +118,9 @@ def make_app():
             (r"/admin/models/delete/(\d+)", AdminModelDeleteHandler),
             (r"/admin/models/system/(\d+)", AdminModelSystemHandler),
             (r"/admin/models/test", AdminModelTestHandler),
+            # 用户侧数字员工大厅（成员 D）
+            (r"/portal/digital-employees", PortalDigitalEmployeeListHandler),
+            (r"/portal/digital-employees/chat", PortalDigitalEmployeeChatHandler),
             (r"/admin/watch-sources", AdminWatchSourceListHandler),
             (r"/admin/watch-sources/create", AdminWatchSourceCreateHandler),
             (r"/admin/watch-sources/update/(\d+)", AdminWatchSourceUpdateHandler),
