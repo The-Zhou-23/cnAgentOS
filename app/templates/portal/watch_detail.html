@@ -1,32 +1,36 @@
-{% extends "../portal_base.html" %} {% block portal_content %}
+{% extends "../portal_base.html" %}
+
+{% block portal_content %}
 <div class="watch-detail-wrap">
-  <a href="/portal/watch" class="watch-back-link"
-    ><i class="fas fa-arrow-left"></i> 返回列表</a
-  >
+    <a href="/portal/watch" class="watch-back-link">
+        <i class="fas fa-arrow-left"></i> 返回列表
+    </a>
 
-  <div class="watch-detail-card">
-    <div class="watch-detail-header">
-      <span class="watch-detail-source">{{ record['source_name'] }}</span>
-      <span class="watch-detail-time">{{ record['created_at'] }}</span>
+    <div class="glass-strong watch-detail-card">
+        <div class="watch-detail-header">
+            <span class="watch-detail-source">{{ record['source_name'] }}</span>
+            <span class="watch-detail-time">{{ record['created_at'] }}</span>
+        </div>
+
+        <h1 class="watch-detail-title">{{ record['title'] }}</h1>
+
+        <div class="watch-detail-meta">
+            <span class="watch-detail-keyword">
+                <i class="fas fa-tag"></i> {{ record['keyword'] }}
+            </span>
+        </div>
+
+        {% if record['content'] %}
+        <div class="watch-detail-content">{{ record['content'] }}</div>
+        {% end %}
+
+        {% if record['url'] %}
+        <div class="watch-detail-actions">
+            <a href="{{ record['url'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary watch-detail-btn">
+                <i class="fas fa-external-link-alt"></i> 访问原文链接
+            </a>
+        </div>
+        {% end %}
     </div>
-
-    <h1 class="watch-detail-title">{{ record['title'] }}</h1>
-
-    <div class="watch-detail-meta">
-      <span class="watch-detail-keyword"
-        ><i class="fas fa-tag"></i> {{ record['keyword'] }}</span
-      >
-    </div>
-
-    {% if record['content'] %}
-    <div class="watch-detail-content">{{ record['content'] }}</div>
-    {% end %} {% if record['url'] %}
-    <div class="watch-detail-actions">
-      <a href="{{ record['url'] }}" target="_self" class="watch-detail-btn">
-        <i class="fas fa-external-link-alt"></i> 访问原文链接
-      </a>
-    </div>
-    {% end %}
-  </div>
 </div>
 {% end %}
