@@ -45,6 +45,17 @@ class BaseHandler(tornado.web.RequestHandler):
         kwargs.setdefault("portal_message", None)
         kwargs.setdefault("portal_message_type", None)
         kwargs.setdefault("active_nav", "")
+        # 管理侧侧栏（admin/_sidebar.html）依赖 current_role_code 做角色级菜单显隐，
+        # 默认按当前登录用户解析；未登录或解析失败时给空字符串，模板侧用 truthy 判定即可。
+        if "current_role_code" not in kwargs:
+            try:
+                user = self.get_current_user_record()
+                kwargs["current_role_code"] = (
+                    UserRepository.get_role_code(user) if user else ""
+                )
+            except Exception:
+                kwargs["current_role_code"] = ""
+        kwargs.setdefault("active_page", "")
         if "role_name" not in kwargs and self.get_current_user():
             kwargs.setdefault("role_name", self.get_current_role_name())
         super().render(template_name, **kwargs)
