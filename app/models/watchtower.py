@@ -103,27 +103,33 @@ class WatchtowerRepository:
 
     @staticmethod
     def _parse_titles(html: str):
-        titles = []
+        items = []
         patterns = [
-            r"<h3[^>]*class=\"[^\"]*news-title[^\"]*\"[^>]*>.*?<a[^>]*>(.*?)</a>",
-            r"<h3[^>]*>.*?<a[^>]*>(.*?)</a>",
-            r"<a[^>]*class=\"[^\"]*news-title[^\"]*\"[^>]*>(.*?)</a>",
+            r"<h3[^>]*class=\"[^\"]*news-title[^\"]*\"[^>]*>.*?<a[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>",
+            r"<h3[^>]*>.*?<a[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>",
+            r"<a[^>]*class=\"[^\"]*news-title[^\"]*\"[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>",
+            r"<a[^>]*class=\"[^\"]*title[^\"]*\"[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>",
         ]
         for pat in patterns:
             matches = re.findall(pat, html, flags=re.S | re.I)
-            for m in matches:
+            for href, m in matches:
                 text = re.sub(r"<[^>]+>", "", m)
                 text = unescape(re.sub(r"\s+", " ", text)).strip()
-                if text and text not in titles:
-                    titles.append(text)
-        if not titles:
-            generic = re.findall(r"<a[^>]*>(.*?)</a>", html, flags=re.S | re.I)
-            for m in generic:
+                if text and text not in [item["title"] for item in items]:
+                    # 处理相对链接
+                    if href.startswith("/"):
+                        href = "https://www.baidu.com" + href
+                    items.append({"title": text, "url": href})
+        if not items:
+            generic = re.findall(r"<a[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>", html, flags=re.S | re.I)
+            for href, m in generic:
                 text = re.sub(r"<[^>]+>", "", m)
                 text = unescape(re.sub(r"\s+", " ", text)).strip()
-                if len(text) >= 6 and text not in titles:
-                    titles.append(text)
-        return titles
+                if len(text) >= 6 and text not in [item["title"] for item in items]:
+                    if href.startswith("/"):
+                        href = "https://www.baidu.com" + href
+                    items.append({"title": text, "url": href})
+        return items
 
     @staticmethod
     def collect(source_id: int, keyword: str, start_page: int, item_count: int):
@@ -132,17 +138,17 @@ class WatchtowerRepository:
             return []
         url = WatchtowerRepository._build_baidu_news_url(keyword, start_page)
         html = WatchtowerRepository._fetch_html(url, source["headers_json"])
-        titles = WatchtowerRepository._parse_titles(html)
+        items = WatchtowerRepository._parse_titles(html)
         rows = []
-        for idx, title in enumerate(titles[: max(1, item_count)], start=1):
+        for idx, item in enumerate(items[: max(1, item_count)], start=1):
             rows.append(
                 {
                     "source_id": source_id,
                     "source_name": source["name"],
                     "keyword": keyword,
-                    "title": title,
+                    "title": item["title"],
                     "content": "",
-                    "url": url,
+                    "url": item["url"],
                 }
             )
         return rows
