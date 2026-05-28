@@ -16,21 +16,8 @@ class AdminWatchSourceListHandler(AdminBaseHandler):
     def get(self):
         sources = WatchtowerRepository.list_sources()
         if not sources:
-            WatchtowerRepository.create_source({
-                "name": "百度新闻",
-                "source_code": "baidu_news",
-                "entry_urls": [
-                    "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_t_sk&tn=news&cl=2&medium=0&rtt=1&wd={关键词}",
-                    "https://www.baidu.com/s?ie=utf-8&bsst=1&rsv_dl=news_b_pn&tn=news&cl=2&medium=0&rtt=1&wd={关键词}&pn={分页步进}"
-                ],
-                "headers": {},
-                "keywords_label": "关键词",
-                "page_param_name": "pn",
-                "page_step": 10,
-                "collect_limit": 10,
-                "is_enabled": 1,
-                "note": "百度新闻专用采集源，仅需填写关键词与起始页数"
-            })
+            # 初始化默认采集源
+            WatchtowerRepository.init_default_sources()
             sources = WatchtowerRepository.list_sources()
         self.render("admin/watch_sources.html", title="瞭望数据源管理", username=self.current_user, sources=sources)
 
@@ -49,6 +36,8 @@ class AdminWatchSourceCreateHandler(AdminBaseHandler):
             "collect_limit": int(self.get_body_argument("collect_limit", 10) or 10),
             "is_enabled": int(self.get_body_argument("is_enabled", 1) or 1),
             "note": (self.get_body_argument("note", "") or "").strip(),
+            "parse_rules": json.loads(self.get_body_argument("parse_rules", "{}") or "{}"),
+            "base_url": (self.get_body_argument("base_url", "") or "").strip(),
         }
         if data["name"] and data["source_code"]:
             WatchtowerRepository.create_source(data)
@@ -69,6 +58,8 @@ class AdminWatchSourceUpdateHandler(AdminBaseHandler):
             "collect_limit": int(self.get_body_argument("collect_limit", 10) or 10),
             "is_enabled": int(self.get_body_argument("is_enabled", 1) or 1),
             "note": (self.get_body_argument("note", "") or "").strip(),
+            "parse_rules": json.loads(self.get_body_argument("parse_rules", "{}") or "{}"),
+            "base_url": (self.get_body_argument("base_url", "") or "").strip(),
         }
         WatchtowerRepository.update_source(int(source_id), data)
         self.redirect("/admin/watch-sources")
@@ -89,6 +80,7 @@ class AdminWatchCollectHandler(AdminBaseHandler):
         source_id = self.get_body_argument("source_id", None)
         item_count = int(self.get_body_argument("item_count", 10) or 10)
         max_pages = int(self.get_body_argument("max_pages", 1) or 1)
+        incremental = self.get_body_argument("incremental", "true").lower() == "true"
 
         if not prompt:
             self.set_header("Content-Type", "text/event-stream; charset=utf-8")
@@ -103,14 +95,15 @@ class AdminWatchCollectHandler(AdminBaseHandler):
         keyword, count = self._extract_keyword_and_count(prompt, item_count)
 
         # 确定采集源
+        source_ids = []
         if source_id:
-            source_id = int(source_id)
+            source_ids = [int(source_id)]
         else:
             sources = WatchtowerRepository.list_sources()
             enabled_sources = [s for s in sources if s["is_enabled"]]
-            source_id = enabled_sources[0]["id"] if enabled_sources else None
+            source_ids = [s["id"] for s in enabled_sources]
 
-        if not source_id:
+        if not source_ids:
             self.set_header("Content-Type", "text/event-stream; charset=utf-8")
             self.set_header("Cache-Control", "no-cache")
             self.set_header("Connection", "keep-alive")
@@ -129,25 +122,38 @@ class AdminWatchCollectHandler(AdminBaseHandler):
             self.write(f"data: {json.dumps({'message': msg}, ensure_ascii=False)}\n\n")
             self.flush()
 
-        send(f"开始采集：关键词「{keyword}」，每页 {item_count} 条，最多 {max_pages} 页")
+        incr_status = "增量" if incremental else "全量"
+        send(f"开始{incr_status}采集：关键词「{keyword}」，每页 {count} 条，最多 {max_pages} 页")
 
         total_collected = 0
-        for page_idx in range(max_pages):
-            start_page = page_idx * WatchtowerRepository.get_source(source_id)["page_step"] if page_idx > 0 else 0
-            send(f"正在采集第 {page_idx + 1} 页...")
-            try:
-                records = WatchtowerRepository.collect(source_id, keyword, start_page, item_count)
-                if records:
-                    WatchtowerRepository.save_records(records)
-                    total_collected += len(records)
-                    for r in records:
-                        send(f"  采集到：{r['title']}")
-                else:
-                    send("  本页无有效数据")
-            except Exception as e:
-                send(f"  第 {page_idx + 1} 页采集失败：{e}")
+        total_skipped = 0
 
-        send(f"采集完成！共采集 {total_collected} 条记录")
+        for src_id in source_ids:
+            source = WatchtowerRepository.get_source(src_id)
+            send(f"正在从「{source['name']}」采集...")
+
+            for page_idx in range(max_pages):
+                start_page = page_idx
+                send(f"  正在采集第 {page_idx + 1} 页...")
+                try:
+                    result = WatchtowerRepository.collect(src_id, keyword, start_page, count, incremental=incremental)
+                    records = result["records"]
+                    skipped = result["skipped"]
+
+                    if skipped > 0:
+                        send(f"  跳过已存在的记录：{skipped} 条")
+
+                    if records:
+                        saved = WatchtowerRepository.save_records(records)
+                        total_collected += saved
+                        for r in records:
+                            send(f"  ✓ 采集到：{r['title']}")
+                    else:
+                        send("  本页无新数据")
+                except Exception as e:
+                    send(f"  ✗ 第 {page_idx + 1} 页采集失败：{e}")
+
+        send(f"采集完成！共采集 {total_collected} 条新记录")
         self.finish()
 
     @staticmethod

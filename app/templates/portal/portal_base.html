@@ -1,0 +1,51 @@
+{% extends "../base.html" %}
+
+{% block head_assets %}
+{% include "../_portal_assets.html" %}
+{% end %}
+
+{% block body_class %}admin-shell portal-shell{% end %}
+
+{% block flash %}
+{% if portal_message %}
+<div class="portal-flash portal-flash-{{ portal_message_type or 'info' }}">
+    <i class="fas fa-info-circle me-2"></i>{{ portal_message }}
+</div>
+{% end %}
+{% end %}
+
+{% block content %}
+<div class="portal-layout">
+    <header class="portal-header glass-strong">
+        <div class="portal-header-brand">
+            <a href="/" class="portal-logo">
+                <i class="fas fa-layer-group"></i>
+                <span>cnAgentOS</span>
+            </a>
+            <span class="portal-header-sub">用户门户</span>
+        </div>
+        <nav class="portal-nav">
+            <a href="/" class="{% if active_nav == 'home' %}active{% end %}"><i class="fas fa-home"></i>首页</a>
+            <a href="/portal/query" class="{% if active_nav == 'query' %}active{% end %}"><i class="fas fa-comments"></i>智能问数</a>
+            <a href="/portal/watch" class="{% if active_nav == 'watch' %}active{% end %}"><i class="fas fa-binoculars"></i>智能瞭望</a>
+            <a href="/portal/digital-employee" class="{% if active_nav == 'digital' %}active{% end %}"><i class="fas fa-user-astronaut"></i>数字员工</a>
+        </nav>
+        <div class="portal-header-actions">
+            <span class="badge-soft"><i class="fas fa-user me-1"></i>{{ username }}{% if role_name %} · {{ role_name }}{% end %}</span>
+            <form action="/auth/logout" method="post" class="m-0">
+                {% module xsrf_form_html() %}
+                <button type="submit" class="btn btn-outline-secondary btn-sm">退出</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="portal-main">
+        {% block portal_content %}{% end %}
+    </main>
+
+    <footer class="portal-footer">
+        <span>cnAgentOS · AI 智能瞭望与智能问数系统</span>
+        <span class="portal-footer-muted">四川农业大学 · 团队实训项目</span>
+    </footer>
+</div>
+{% end %}
