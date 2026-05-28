@@ -129,10 +129,22 @@ class AdminRoleListHandler(AdminBaseHandler):
     def get(self):
         roles = RBACRepository.list_roles()
         permissions = RBACRepository.list_permissions()
+        permission_groups = RBACRepository.list_permissions_grouped()
         role_permissions = {role["id"]: RBACRepository.get_role_permissions(role["id"]) for role in roles}
         current_user_record = UserRepository.get_user_by_username(self.current_user)
         current_role_code = UserRepository.get_role_code(current_user_record)
-        self.render("admin/roles.html", title="角色管理", username=self.current_user, roles=roles, permissions=permissions, role_permissions=role_permissions, current_role_code=current_role_code)
+        self.render(
+            "admin/roles.html",
+            title="角色管理",
+            username=self.current_user,
+            roles=roles,
+            permissions=permissions,
+            permission_groups=permission_groups,
+            permission_group_list=sorted(permission_groups.items(), key=lambda item: item[0]),
+            role_permissions=role_permissions,
+            current_role_code=current_role_code,
+            active_page="roles",
+        )
 
 class AdminRoleCreateHandler(AdminBaseHandler):
     @tornado.web.authenticated
@@ -186,10 +198,21 @@ class AdminPermissionListHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def get(self):
         permissions = RBACRepository.list_permissions()
+        permission_groups = RBACRepository.list_permissions_grouped()
         roles = RBACRepository.list_roles()
         current_user_record = UserRepository.get_user_by_username(self.current_user)
         current_role_code = UserRepository.get_role_code(current_user_record)
-        self.render("admin/permissions.html", title="权限管理", username=self.current_user, permissions=permissions, roles=roles, current_role_code=current_role_code)
+        self.render(
+            "admin/permissions.html",
+            title="权限管理",
+            username=self.current_user,
+            permissions=permissions,
+            permission_groups=permission_groups,
+            permission_group_list=sorted(permission_groups.items(), key=lambda item: item[0]),
+            roles=roles,
+            current_role_code=current_role_code,
+            active_page="permissions",
+        )
 
 class AdminPermissionCreateHandler(AdminBaseHandler):
     @tornado.web.authenticated
@@ -236,18 +259,48 @@ class AdminFeatureListHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def get(self):
         features = FeatureRepository.list_features()
+        feature_groups: dict[str, list] = {}
+        for feature in features:
+            feature_groups.setdefault(feature["menu_group"], []).append(feature)
         current_user_record = UserRepository.get_user_by_username(self.current_user)
         current_role_code = UserRepository.get_role_code(current_user_record)
-        self.render("admin/features.html", title="功能管理", username=self.current_user, features=features, current_role_code=current_role_code)
+        self.render(
+            "admin/features.html",
+            title="功能菜单",
+            username=self.current_user,
+            features=features,
+            feature_groups=feature_groups,
+            feature_group_list=sorted(feature_groups.items(), key=lambda item: item[0]),
+            current_role_code=current_role_code,
+            active_page="features",
+        )
 
 class AdminFeatureUpdateHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def post(self, feature_id):
-        data = {
-            "name": (self.get_body_argument("name", "") or "").strip(),
-            "route_path": (self.get_body_argument("route_path", "") or "").strip(),
-            "sort_no": int(self.get_body_argument("sort_no", 0) or 0),
-            "is_enabled": int(self.get_body_argument("is_enabled", "1") or 1),
-        }
-        FeatureRepository.update_feature(int(feature_id), data)
+        current_user_record = UserRepository.get_user_by_username(self.current_user)
+        current_role_code = UserRepository.get_role_code(current_user_record)
+        if current_role_code != "super_admin":
+            self.set_status(403)
+            self.redirect("/admin/users")
+            return
+
+        feature = FeatureRepository.get_feature(int(feature_id))
+        if not feature:
+            self.redirect("/admin/features")
+            return
+
+        action = (self.get_body_argument("action", "save") or "save").strip()
+        if action == "toggle":
+            enabled = int(self.get_body_argument("is_enabled", "1") or 1) == 1
+            FeatureRepository.toggle_feature(int(feature_id), enabled)
+        else:
+            data = {
+                "name": (self.get_body_argument("name", "") or feature["name"]).strip(),
+                "menu_group": (self.get_body_argument("menu_group", "") or feature["menu_group"]).strip(),
+                "route_path": (self.get_body_argument("route_path", "") or feature["route_path"]).strip(),
+                "sort_no": int(self.get_body_argument("sort_no", feature["sort_no"]) or 0),
+                "is_enabled": int(self.get_body_argument("is_enabled", feature["is_enabled"]) or 1),
+            }
+            FeatureRepository.update_feature(int(feature_id), data)
         self.redirect("/admin/features")

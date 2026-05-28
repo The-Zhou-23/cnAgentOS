@@ -4,61 +4,20 @@
     <span>AI 智能瞭望与智能问数系统</span>
   </div>
   <div class="nav-card">
-    <a
-      href="/admin/users"
-      class="{% if active_page == 'users' %}active{% end %}"
-      ><i class="fas fa-users"></i>用户管理</a
-    >
-    <a
-      href="/admin/roles"
-      class="{% if active_page == 'roles' %}active{% end %}"
-      ><i class="fas fa-user-shield"></i>角色管理</a
-    >
-    <a
-      href="/admin/permissions"
-      class="{% if active_page == 'permissions' %}active{% end %}"
-      ><i class="fas fa-sitemap"></i>权限管理</a
-    >
-    {% if current_role_code and (current_role_code == 'normal_admin' or
-    current_role_code == 'super_admin') %}
-    <a
-      href="/admin/features"
-      class="{% if active_page == 'features' %}active{% end %}"
-      ><i class="fas fa-th-large"></i>功能管理</a
-    >
+    {% if sidebar_features %}
+      {% for item in sidebar_features %}
+      <a
+        href="{{ item['route_path'] }}"
+        class="{% if active_page == item['active_page'] %}active{% end %}"
+        ><i class="{{ item['icon'] }}"></i>{{ item['name'] }}</a
+      >
+      {% end %}
+    {% else %}
+      <div class="text-secondary small px-2">暂无可用菜单，请联系超级管理员配置权限</div>
     {% end %}
-    <a
-      href="/admin/api-interfaces"
-      class="{% if active_page == 'api_interfaces' %}active{% end %}"
-      ><i class="fas fa-plug"></i>接口管理</a
-    >
-    <a
-      href="/admin/digital-employees"
-      class="{% if active_page == 'digital_employees' %}active{% end %}"
-      ><i class="fas fa-user-astronaut"></i>数字员工</a
-    >
-    <!-- 成员 C：瞭望管理菜单 -->
-    <a
-      href="/admin/models"
-      class="{% if active_page == 'models' %}active{% end %}"
-      ><i class="fas fa-microchip"></i>模型引擎</a
-    >
-    <a
-      href="/admin/watch-sources"
-      class="{% if active_page == 'watch_sources' %}active{% end %}"
-      ><i class="fas fa-satellite-dish"></i>智能瞭望采集</a
-    >
-    <a
-      href="/admin/watch-records"
-      class="{% if active_page == 'watch_records' %}active{% end %}"
-      ><i class="fas fa-database"></i>数据仓库</a
-    >
   </div>
   <form action="/auth/logout" method="post" class="mt-4">
-    {% module xsrf_form_html() %}<button
-      class="btn btn-outline-secondary w-100"
-    >
-      退出登录
-    </button>
+    {% module xsrf_form_html() %}
+    <button class="btn btn-outline-secondary w-100">退出登录</button>
   </form>
 </aside>

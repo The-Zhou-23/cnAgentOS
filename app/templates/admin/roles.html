@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{{ title }} - cnAgentOS</title>
     <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
+    <style>
+        .perm-group-box { border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
+        .perm-group-title { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+    </style>
 </head>
 <body class="admin-shell">
 <div class="page-shell">
@@ -17,18 +20,18 @@
         <div class="topbar">
             <div>
                 <h1 class="title-large">角色管理</h1>
-                <div class="subtitle">用于管理角色与权限映射关系，超级管理员不可修改和删除</div>
+                <div class="subtitle">为角色分配模块访问权限；超级管理员拥有全部权限且不可修改</div>
             </div>
-            <div class="badge-soft"><i class="fas fa-shield-halved me-2"></i>默认系统角色：超级管理员</div>
+            <div class="badge-soft"><i class="fas fa-shield-halved me-2"></i>共 {{ len(roles) }} 个角色</div>
         </div>
 
         {% if current_role_code == 'super_admin' %}
         <div class="glass-strong card-soft mb-4">
             <form action="/admin/roles/create" method="post" class="row g-3 align-items-end">
                 {% module xsrf_form_html() %}
-                <div class="col-md-4"><label class="form-label fw-semibold">角色名称</label><input class="form-control" name="name" placeholder="输入角色名称"></div>
-                <div class="col-md-4"><label class="form-label fw-semibold">角色编码</label><input class="form-control" name="code" placeholder="输入角色编码"></div>
-                <div class="col-md-4 d-grid"><button class="btn btn-primary"><i class="fas fa-plus me-2"></i>新增角色</button></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">角色名称</label><input class="form-control" name="name" placeholder="输入角色名称" required></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">角色编码</label><input class="form-control" name="code" placeholder="如：audit_admin" required></div>
+                <div class="col-md-4 d-grid"><button class="btn btn-primary" type="submit"><i class="fas fa-plus me-2"></i>新增角色</button></div>
             </form>
         </div>
         {% end %}
@@ -37,7 +40,7 @@
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead>
-                        <tr><th>ID</th><th>名称</th><th>编码</th><th>系统角色</th><th>权限配置</th><th style="width:240px;">操作</th></tr>
+                        <tr><th>ID</th><th>名称</th><th>编码</th><th>系统角色</th><th>权限配置</th><th style="width:220px;">操作</th></tr>
                     </thead>
                     <tbody>
                     {% for role in roles %}
@@ -45,19 +48,28 @@
                         <td class="text-secondary">#{{ role['id'] }}</td>
                         <td class="fw-semibold">{{ role['name'] }}</td>
                         <td><span class="badge-soft">{{ role['code'] }}</span></td>
-                        <td>{% if role['is_system'] %}<span class="badge-soft"><i class="fas fa-lock me-1"></i>是</span>{% else %}<span class="badge-soft">否</span>{% end %}</td>
-                        <td>
-                            {% if current_role_code == 'super_admin' %}
-                            <form action="/admin/roles/permissions/{{ role['id'] }}" method="post" class="d-flex flex-wrap gap-2">
+                        <td>{% if role['is_system'] %}<span class="badge-soft"><i class="fas fa-lock me-1"></i>是</span>{% else %}否{% end %}</td>
+                        <td style="min-width:320px;">
+                            {% if current_role_code == 'super_admin' and role['code'] != 'super_admin' %}
+                            <form action="/admin/roles/permissions/{{ role['id'] }}" method="post">
                                 {% module xsrf_form_html() %}
-                                {% for p in permissions %}
-                                <label class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" name="permission_ids" value="{{ p['id'] }}" {% if p['id'] in role_permissions[role['id']] %}checked{% end %}>
-                                    <span class="form-check-label">{{ p['name'] }}</span>
-                                </label>
+                                {% for group, items in permission_group_list %}
+                                <div class="perm-group-box">
+                                    <div class="perm-group-title">{{ group }}</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for p in items %}
+                                        <label class="form-check form-check-inline m-0">
+                                            <input class="form-check-input" type="checkbox" name="permission_ids" value="{{ p['id'] }}" {% if p['id'] in role_permissions[role['id']] %}checked{% end %}>
+                                            <span class="form-check-label">{{ p['name'] }}</span>
+                                        </label>
+                                        {% end %}
+                                    </div>
+                                </div>
                                 {% end %}
-                                <button class="btn btn-sm btn-outline-primary">保存权限</button>
+                                <button class="btn btn-sm btn-outline-primary mt-1" type="submit">保存权限</button>
                             </form>
+                            {% elif role['code'] == 'super_admin' %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary">拥有全部权限</span>
                             {% else %}
                             <div class="d-flex flex-wrap gap-2">
                                 {% for p in permissions %}
@@ -70,20 +82,18 @@
                         </td>
                         <td>
                             {% if not role['is_system'] and current_role_code == 'super_admin' %}
-                            <form action="/admin/roles/update/{{ role['id'] }}" method="post" class="d-inline">
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-edit-role"
+                                data-id="{{ role['id'] }}"
+                                data-name="{{ role['name'] }}"
+                                data-code="{{ role['code'] }}">编辑</button>
+                            <form action="/admin/roles/delete/{{ role['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除该角色？')">
                                 {% module xsrf_form_html() %}
-                                <input type="hidden" name="name" value="{{ role['name'] }}">
-                                <input type="hidden" name="code" value="{{ role['code'] }}">
-                                <button class="btn btn-sm btn-outline-secondary">修改</button>
-                            </form>
-                            <form action="/admin/roles/delete/{{ role['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除角色？')">
-                                {% module xsrf_form_html() %}
-                                <button class="btn btn-sm btn-outline-danger">删除</button>
+                                <button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
                             </form>
                             {% elif role['is_system'] %}
-                            <span class="badge-soft"><i class="fas fa-lock me-1"></i>系统默认角色</span>
+                            <span class="badge-soft"><i class="fas fa-lock me-1"></i>系统内置</span>
                             {% else %}
-                            <span class="text-secondary">无权限操作</span>
+                            <span class="text-secondary">只读</span>
                             {% end %}
                         </td>
                     </tr>
@@ -94,6 +104,40 @@
         </div>
     </main>
 </div>
-<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+
+{% if current_role_code == 'super_admin' %}
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="editRoleForm" method="post">
+            {% module xsrf_form_html() %}
+            <div class="modal-header">
+                <h5 class="modal-title">编辑角色</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-12"><label class="form-label">角色名称</label><input class="form-control" name="name" id="editRoleName" required></div>
+                <div class="col-12"><label class="form-label">角色编码</label><input class="form-control" name="code" id="editRoleCode" required></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% end %}
+
+<script src="{{ static_url('dist/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+document.querySelectorAll('.btn-edit-role').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const form = document.getElementById('editRoleForm');
+        form.action = '/admin/roles/update/' + btn.dataset.id;
+        document.getElementById('editRoleName').value = btn.dataset.name;
+        document.getElementById('editRoleCode').value = btn.dataset.code;
+        new bootstrap.Modal(document.getElementById('editRoleModal')).show();
+    });
+});
+</script>
 </body>
 </html>
