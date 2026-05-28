@@ -15,23 +15,6 @@ from app.models.watchtower import WatchtowerRepository
 class PortalWatchListHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
-        page = max(1, int(self.get_argument("page", 1)))
-        keyword = (self.get_argument("keyword", "") or "").strip()
-        source_id = (self.get_argument("source_id", "") or "").strip()
-        page_size = 20
-
-        if keyword or source_id:
-            total, records = WatchtowerRepository.list_records_filtered(
-                page=page,
-                page_size=page_size,
-                keyword=keyword or None,
-                source_id=int(source_id) if source_id else None,
-                user_name=self.current_user,
-            )
-        else:
-            total, records = WatchtowerRepository.list_records(page=page, page_size=page_size, user_name=self.current_user)
-
-        total_pages = max(1, math.ceil(total / page_size))
         sources = WatchtowerRepository.list_sources(user_name=self.current_user)
         baidu = WatchtowerRepository.get_source_by_code("baidu_news", user_name=self.current_user)
         if not baidu:
@@ -43,6 +26,35 @@ class PortalWatchListHandler(BaseHandler):
             username=self.current_user,
             sources=sources,
             default_source=baidu,
+            source_count=len(sources),
+            active_nav="watch",
+        )
+
+
+class PortalWatchDatabaseHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        page = max(1, int(self.get_argument("page", 1)))
+        keyword = (self.get_argument("keyword", "") or "").strip()
+        source_id = (self.get_argument("source_id", "") or "").strip()
+        page_size = 10
+        if keyword or source_id:
+            total, records = WatchtowerRepository.list_records_filtered(
+                page=page,
+                page_size=page_size,
+                keyword=keyword or None,
+                source_id=int(source_id) if source_id else None,
+                user_name=self.current_user,
+            )
+        else:
+            total, records = WatchtowerRepository.list_records(page=page, page_size=page_size, user_name=self.current_user)
+        total_pages = max(1, math.ceil(total / page_size))
+        sources = WatchtowerRepository.list_sources(user_name=self.current_user)
+        self.render(
+            "portal/watch_database.html",
+            title="数据仓库",
+            username=self.current_user,
+            sources=sources,
             records=records,
             total=total,
             page=page,
@@ -51,8 +63,7 @@ class PortalWatchListHandler(BaseHandler):
             has_next=page < total_pages,
             keyword=keyword,
             source_id=source_id,
-            source_count=len(sources),
-            active_nav="watch",
+            active_nav="database",
         )
 
 

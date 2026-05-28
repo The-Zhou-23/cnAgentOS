@@ -1,0 +1,124 @@
+{% extends "portal_base.html" %}
+
+{% block portal_content %}
+<style>
+.db-hero {
+    border-radius: 28px;
+    padding: 32px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, .95), rgba(37, 99, 235, .2));
+    color: #fff;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, .26);
+    margin-bottom: 20px;
+}
+.db-hero h1 { font-size: 38px; font-weight: 800; margin: 8px 0 10px; }
+.db-hero p { color: rgba(255,255,255,.72); max-width: 820px; }
+.db-toolbar { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom: 16px; }
+.db-filter { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.db-filter input, .db-filter select { border-radius: 14px; border:1px solid #dbe4f0; padding: 10px 14px; outline:none; }
+.db-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.db-card { border-radius: 20px; background:#fff; border:1px solid rgba(148,163,184,.18); box-shadow: 0 14px 40px rgba(15,23,42,.06); padding: 16px; margin-bottom: 12px; }
+.db-card h4 { margin: 8px 0; font-size: 16px; font-weight: 800; }
+.db-meta { display:flex; gap:10px; flex-wrap:wrap; color:#64748b; font-size: 12px; }
+.db-meta .tag { background:#e0f2fe; color:#0369a1; }
+.db-pagination { display:flex; gap:8px; flex-wrap:wrap; margin-top: 18px; }
+.db-pagination a, .db-pagination span { border-radius: 12px; padding: 10px 14px; background:#fff; border:1px solid #e5e7eb; color:#0f172a; text-decoration:none; }
+.db-pagination .disabled { opacity:.45; pointer-events:none; }
+</style>
+
+<div class="db-hero">
+  <div class="badge-soft mb-2">用户端数据仓库</div>
+  <h1>我的采集数据库</h1>
+  <p>这里展示你通过智能瞭望采集到的数据，默认每页 10 条。你可以按来源筛选、删除单条记录，或批量删除选中的记录。</p>
+</div>
+
+<div class="glass-strong" style="padding:18px 20px; border-radius:24px;">
+  <div class="db-toolbar">
+    <form class="db-filter" method="get" action="/user/watch/database">
+      <input type="text" name="keyword" placeholder="按关键词筛选" value="{{ keyword }}">
+      <select name="source_id">
+        <option value="">全部来源</option>
+        {% for source in sources %}
+        <option value="{{ source['id'] }}" {% if source_id and int(source_id) == source['id'] %}selected{% end %}>{{ source['name'] }}</option>
+        {% end %}
+      </select>
+      <button class="btn btn-primary" type="submit">筛选</button>
+    </form>
+    <form method="post" action="/user/watch/batch-delete" id="dbBatchForm">
+      {% module xsrf_form_html() %}
+      <button class="btn btn-outline-danger" type="button" id="dbCheckAll">全选</button>
+      <button class="btn btn-danger" type="button" id="dbBatchDelete">批量删除</button>
+    </form>
+  </div>
+
+  <form method="post" action="/user/watch/batch-delete" id="dbRecordsForm">
+    {% module xsrf_form_html() %}
+    {% if records %}
+      {% for record in records %}
+      <div class="db-card">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <input type="checkbox" class="db-record-check" name="record_ids" value="{{ record['id'] }}" style="margin-top:4px;">
+          <div style="flex:1;">
+            <div class="db-meta">
+              <span class="tag">{{ record['source_name'] }}</span>
+              <span>{{ record['created_at'] }}</span>
+              <span>关键词：{{ record['keyword'] }}</span>
+            </div>
+            <h4>{{ record['title'] }}</h4>
+            <div class="db-meta">
+              <span style="word-break: break-all;">{{ record['url'] }}</span>
+            </div>
+            <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-outline-danger btn-sm db-del-one" type="button" data-delete-url="/user/watch/delete/{{ record['id'] }}">删除</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% end %}
+    {% else %}
+      <div class="db-card">暂无数据</div>
+    {% end %}
+  </form>
+
+  <div class="db-pagination">
+    {% if has_prev %}<a href="/user/watch/database?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">上一页</a>{% else %}<span class="disabled">上一页</span>{% end %}
+    <span>第 {{ page }} / {{ total_pages }} 页</span>
+    {% if has_next %}<a href="/user/watch/database?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">下一页</a>{% else %}<span class="disabled">下一页</span>{% end %}
+  </div>
+</div>
+
+<script>
+const checks = () => Array.from(document.querySelectorAll('.db-record-check'));
+const allBtn = document.getElementById('dbCheckAll');
+const batchBtn = document.getElementById('dbBatchDelete');
+const batchForm = document.getElementById('dbRecordsForm');
+allBtn?.addEventListener('click', () => {
+  const should = !checks().every(x => x.checked);
+  checks().forEach(x => x.checked = should);
+});
+batchBtn?.addEventListener('click', () => {
+  const count = checks().filter(x => x.checked).length;
+  if (!count) return alert('请先选择要删除的记录');
+  if (confirm(`确认删除选中的 ${count} 条记录吗？`)) batchForm?.submit();
+});
+document.querySelectorAll('.db-del-one').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const url = btn.getAttribute('data-delete-url');
+    if (!url) return;
+    if (!confirm('确认删除这条记录？')) return;
+    const f = document.createElement('form');
+    f.method = 'post';
+    f.action = url;
+    const xsrf = document.querySelector('#dbRecordsForm input[name="_xsrf"]');
+    if (xsrf) {
+      const i = document.createElement('input');
+      i.type = 'hidden';
+      i.name = '_xsrf';
+      i.value = xsrf.value;
+      f.appendChild(i);
+    }
+    document.body.appendChild(f);
+    f.submit();
+  });
+});
+</script>
+{% end %}
