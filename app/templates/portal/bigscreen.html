@@ -1,0 +1,101 @@
+{% extends "../base.html" %}
+
+{% block title %}数智大屏 - 智慧舆情{% end %}
+
+{% block head_assets %}
+{% include "../_portal_assets.html" %}
+<link rel="stylesheet" href="{{ static_url('css/sentiment.css') }}" />
+{% end %}
+
+{% block body_class %}bigscreen-shell{% end %}
+
+{% block content %}
+<div class="bigscreen-wrap">
+    <header class="bigscreen-header">
+        <div>
+            <span class="bigscreen-title">cnAgentOS · 智慧舆情数智大屏</span>
+        </div>
+        <div class="bigscreen-clock" id="clock">--:--:--</div>
+        <div>
+            <a href="/portal/sentiment" class="bigscreen-back"><i class="fas fa-arrow-left me-1"></i>返回分析</a>
+        </div>
+    </header>
+
+    <aside class="bigscreen-left">
+        <section class="bigscreen-panel">
+            <h3>数据指标 <span class="switch">实时</span></h3>
+            <div class="bigscreen-panel-body">
+                <div class="bigscreen-metrics">
+                    <div class="metric-card">
+                        <div class="label">瞭望总数</div>
+                        <div class="value" id="m-watch">{{ metrics['watch_total'] }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">数据源</div>
+                        <div class="value" id="m-source">{{ metrics['source_total'] }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">聊天文本</div>
+                        <div class="value" id="m-chat">{{ metrics['chat_total'] }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">今日采集</div>
+                        <div class="value" id="m-today">{{ metrics['today_watch'] }}</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bigscreen-panel" style="flex:1;min-height:0;">
+            <h3>来源分布 <span class="switch" id="src-total">--</span></h3>
+            <div class="bigscreen-panel-body">
+                <div class="bigscreen-source-list" id="bs-sources"></div>
+            </div>
+        </section>
+    </aside>
+
+    <section class="bigscreen-center">
+        <section class="bigscreen-panel bigscreen-globe-panel">
+            <h3>3D 地球 · 地域热度
+                <span class="switch">
+                    <select id="scope-switch" style="background:transparent;border:1px solid rgba(56,189,248,0.3);color:#cbd5f5;border-radius:6px;padding:2px 6px;font-size:12px;">
+                        <option value="all">全域</option>
+                        <option value="watch">瞭望</option>
+                        <option value="chat">聊天</option>
+                    </select>
+                </span>
+            </h3>
+            <div class="bigscreen-panel-body">
+                <canvas id="globe-canvas" class="bigscreen-globe-canvas"></canvas>
+            </div>
+        </section>
+        <section class="bigscreen-panel" style="height:240px;flex:0 0 240px;">
+            <h3>采集 / 聊天 趋势</h3>
+            <div class="bigscreen-panel-body">
+                <svg id="bs-trend" class="bigscreen-trend"></svg>
+            </div>
+        </section>
+    </section>
+
+    <aside class="bigscreen-right">
+        <section class="bigscreen-panel" style="flex:1;min-height:0;">
+            <h3>关键词词云</h3>
+            <div class="bigscreen-panel-body">
+                <canvas id="bs-wordcloud" class="wordcloud-canvas"></canvas>
+            </div>
+        </section>
+        <section class="bigscreen-panel" style="flex:1;min-height:0;">
+            <h3>实时动态</h3>
+            <div class="bigscreen-panel-body">
+                <div class="bigscreen-feed" id="bs-feed"></div>
+            </div>
+        </section>
+    </aside>
+</div>
+
+<script>
+window.__SENTIMENT_DATA_URL__ = "/portal/sentiment/data";
+</script>
+<script src="{{ static_url('dist/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ static_url('js/bigscreen.js') }}"></script>
+{% end %}
