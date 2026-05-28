@@ -18,6 +18,7 @@ FEATURE_DEFINITIONS = [
     ("聊天文件", "feature.chat_files", "业务管理", "/admin/chat/files", "system.chat_file", "fas fa-folder-open", "chat_files", 110),
     ("聊天服务器", "feature.chat_servers", "业务管理", "/admin/chat/servers", "system.chat_server", "fas fa-server", "chat_servers", 120),
     ("工具集管理", "feature.tools", "业务管理", "/admin/tools", "system.ai_tool", "fas fa-toolbox", "tools", 130),
+    ("自动化调度", "feature.automation", "业务管理", "/admin/automation", "system.automation", "fas fa-robot", "automation", 140),
 ]
 
 

@@ -1,0 +1,87 @@
+#gesture-camera {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    width: 160px;
+    height: 120px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    z-index: 9998;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    background: #1a1a2e;
+    cursor: move;
+    overflow: hidden;
+    transform: scaleX(-1);
+    object-fit: cover;
+}
+
+#gesture-camera.hidden {
+    display: none;
+}
+
+#gesture-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(16, 185, 129, 0.85);
+    padding: 8px 24px;
+    border-radius: 40px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+}
+
+#gesture-indicator.warn {
+    background: rgba(245, 158, 11, 0.9);
+}
+
+#gesture-indicator.error {
+    background: rgba(239, 68, 68, 0.92);
+}
+
+#gesture-indicator.show {
+    opacity: 1;
+}
+
+#gesture-toggle-btn {
+    position: fixed;
+    right: 72px;
+    bottom: 220px;
+    z-index: 9990;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1.5px solid rgba(148, 163, 184, 0.45);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s;
+    color: #94a3b8;
+    font-size: 16px;
+}
+
+#gesture-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.65);
+}
+
+#gesture-toggle-btn.active {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.55);
+    background: rgba(16, 185, 129, 0.12);
+}
+
+#gesture-toggle-btn.active:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.7);
+}

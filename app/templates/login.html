@@ -59,6 +59,7 @@
     </div>
 
     <script src="{{ static_url('js/base.js') }}"></script>
+    <script src="{{ static_url('js/voice.js') }}"></script>
     <script>
         (function () {
             const loginTypeInput = document.getElementById('loginTypeInput');
@@ -78,6 +79,13 @@
 
             radios.forEach((radio) => radio.addEventListener('change', syncLoginType));
             syncLoginType();
+
+            var form = document.getElementById('loginForm');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    sessionStorage.setItem('voice_welcome', '1');
+                });
+            }
         })();
     </script>
 </body>

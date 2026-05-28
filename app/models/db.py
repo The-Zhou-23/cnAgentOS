@@ -185,9 +185,12 @@ def init_db():
         AIToolRepository.init_schema()
         AIToolRepository.ensure_defaults()
 
+        from app.models.scheduler import SchedulerRepository
+
         RBACRepository.ensure_default_permissions()
         FeatureRepository.ensure_defaults()
         RBACRepository.ensure_default_role_permissions()
+        SchedulerRepository.init_schema()
 
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 0)", ("普通管理员", "normal_admin"))

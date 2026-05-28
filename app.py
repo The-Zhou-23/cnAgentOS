@@ -78,6 +78,14 @@ from app.controllers.admin_chat import (
     AdminChatGroupsHandler,
     AdminChatServersHandler,
 )
+from app.controllers.admin_automation import (
+    AdminAutomationListHandler,
+    AdminAutomationCreateHandler,
+    AdminAutomationUpdateHandler,
+    AdminAutomationDeleteHandler,
+    AdminAutomationToggleHandler,
+    AdminAutomationRunHandler,
+)
 from app.controllers.admin_tools import AdminToolsHandler
 from app.models.db import get_connection, init_db
 from app.models.model_service import ModelServiceRepository
@@ -178,6 +186,12 @@ def make_app():
             (r"/admin/watch-records/batch-delete", AdminWatchRecordBatchDeleteHandler),
             (r"/admin/features", AdminFeatureListHandler),
             (r"/admin/features/update/(\d+)", AdminFeatureUpdateHandler),
+            (r"/admin/automation", AdminAutomationListHandler),
+            (r"/admin/automation/create", AdminAutomationCreateHandler),
+            (r"/admin/automation/update/(\d+)", AdminAutomationUpdateHandler),
+            (r"/admin/automation/delete/(\d+)", AdminAutomationDeleteHandler),
+            (r"/admin/automation/toggle/(\d+)", AdminAutomationToggleHandler),
+            (r"/admin/automation/run/(\d+)", AdminAutomationRunHandler),
         ],
         **settings,
     )
@@ -206,5 +220,8 @@ if __name__ == "__main__":
     server = HTTPServer(app)
     server.bind(10087)
     server.start()
+    from app.models.workflow import WorkflowEngine
+    scheduler = tornado.ioloop.PeriodicCallback(WorkflowEngine.check_and_run, 30000)
+    scheduler.start()
     print("====== Server 启动成功 ======== 端口：10087 ======")
     tornado.ioloop.IOLoop.current().start()

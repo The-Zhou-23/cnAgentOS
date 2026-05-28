@@ -18,6 +18,7 @@ PERMISSION_DEFINITIONS = [
     ("业务管理", "聊天文件", "system.chat_file", 110),
     ("业务管理", "聊天服务器", "system.chat_server", 120),
     ("业务管理", "工具集管理", "system.ai_tool", 130),
+    ("业务管理", "自动化调度", "system.automation", 140),
 ]
 
 # 普通管理员默认拥有的业务权限（不含角色/权限/功能菜单配置）
@@ -32,6 +33,7 @@ NORMAL_ADMIN_PERMISSION_CODES = [
     "system.chat_file",
     "system.chat_server",
     "system.ai_tool",
+    "system.automation",
 ]
 
 OBSOLETE_PERMISSION_CODES = ("system.menu",)
