@@ -108,6 +108,8 @@
 {% end %}
 
 {% block extra_js %}
+<script src="{{ static_url('js/voice.js') }}"></script>
+<script src="{{ static_url('js/gesture.js') }}"></script>
 <script>
 window.__SENTIMENT_DATA_URL__ = "/portal/sentiment/data";
 window.__SENTIMENT_ANALYZE_URL__ = "/portal/sentiment/analyze";

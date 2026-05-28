@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{{ static_url('css/sentiment.css') }}" />
 {% end %}
 
-{% block body_class %}bigscreen-shell{% end %}
+{% block body_class %}bigscreen-shell portal-shell{% end %}
 
 {% block content %}
 <div class="bigscreen-wrap">
@@ -98,4 +98,9 @@ window.__SENTIMENT_DATA_URL__ = "/portal/sentiment/data";
 </script>
 <script src="{{ static_url('dist/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ static_url('js/bigscreen.js') }}"></script>
+{% end %}
+
+{% block extra_js %}
+<script src="{{ static_url('js/voice.js') }}"></script>
+<script src="{{ static_url('js/gesture.js') }}"></script>
 {% end %}
