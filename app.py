@@ -25,16 +25,6 @@ from app.controllers.admin import (
     AdminUserResetPasswordHandler,
     AdminUserUpdateHandler,
 )
-from app.controllers.admin_watch import (
-    AdminWatchCollectHandler,
-    AdminWatchRecordBatchDeleteHandler,
-    AdminWatchRecordDeleteHandler,
-    AdminWatchRecordListHandler,
-    AdminWatchSourceCreateHandler,
-    AdminWatchSourceDeleteHandler,
-    AdminWatchSourceListHandler,
-    AdminWatchSourceUpdateHandler,
-)
 # 成员 D 独占：模型 + 接口 + 数字员工
 from app.controllers.admin_ai import (
     AdminAPIInterfaceCreateHandler,
@@ -65,7 +55,7 @@ from app.controllers._temp_a_portal_stubs import (
     TempPortalDigitalEmployeeHandler,
     TempPortalQueryHandler,
 )
-from app.controllers.portal_watch import PortalWatchListHandler, PortalWatchDetailHandler
+from app.controllers.portal_watch import PortalWatchBatchDeleteHandler, PortalWatchCollectHandler, PortalWatchDeleteHandler, PortalWatchListHandler
 from app.controllers.portal_chat import (
     PortalChatApiHandler,
     PortalChatFileHandler,
@@ -120,8 +110,10 @@ def make_app():
             # 【临时路由 - 成员 A】待 D/E 实现正式页面后删除
             (r"/portal/query", TempPortalQueryHandler),
             # 成员 C：智能瞭望用户侧路由
-            (r"/portal/watch", PortalWatchListHandler),
-            (r"/portal/watch/(\d+)", PortalWatchDetailHandler),
+            (r"/user/watch", PortalWatchListHandler),
+            (r"/user/watch/collect", PortalWatchCollectHandler),
+            (r"/user/watch/delete/(\d+)", PortalWatchDeleteHandler),
+            (r"/user/watch/batch-delete", PortalWatchBatchDeleteHandler),
             (r"/admin/login", AdminLoginHandler),
             (r"/admin/logout", AdminLogoutHandler),
             (r"/admin/users", AdminUserListHandler),
@@ -168,14 +160,6 @@ def make_app():
             (r"/admin/chat/files", AdminChatFilesHandler),
             (r"/admin/chat/servers", AdminChatServersHandler),
             (r"/admin/tools", AdminToolsHandler),
-            (r"/admin/watch-sources", AdminWatchSourceListHandler),
-            (r"/admin/watch-sources/create", AdminWatchSourceCreateHandler),
-            (r"/admin/watch-sources/update/(\d+)", AdminWatchSourceUpdateHandler),
-            (r"/admin/watch-sources/delete/(\d+)", AdminWatchSourceDeleteHandler),
-            (r"/admin/watch-collect", AdminWatchCollectHandler),
-            (r"/admin/watch-records", AdminWatchRecordListHandler),
-            (r"/admin/watch-records/delete/(\d+)", AdminWatchRecordDeleteHandler),
-            (r"/admin/watch-records/batch-delete", AdminWatchRecordBatchDeleteHandler),
             (r"/admin/features", AdminFeatureListHandler),
             (r"/admin/features/update/(\d+)", AdminFeatureUpdateHandler),
         ],

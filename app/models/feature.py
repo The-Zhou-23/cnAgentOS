@@ -12,8 +12,6 @@ FEATURE_DEFINITIONS = [
     ("接口管理", "feature.api", "业务管理", "/admin/api-interfaces", "system.api", "fas fa-plug", "api_interfaces", 50),
     ("数字员工", "feature.digital", "业务管理", "/admin/digital-employees", "system.digital_employee", "fas fa-user-astronaut", "digital_employees", 60),
     ("模型引擎", "feature.models", "业务管理", "/admin/models", "system.model", "fas fa-microchip", "models", 70),
-    ("智能瞭望采集", "feature.watch", "业务管理", "/admin/watch-sources", "system.watch", "fas fa-satellite-dish", "watch_sources", 80),
-    ("采集结果", "feature.watch_records", "业务管理", "/admin/watch-records", "system.watch_record", "fas fa-database", "watch_records", 90),
     ("聊天群管理", "feature.chat_groups", "业务管理", "/admin/chat/groups", "system.chat_group", "fas fa-users", "chat_groups", 100),
     ("聊天文件", "feature.chat_files", "业务管理", "/admin/chat/files", "system.chat_file", "fas fa-folder-open", "chat_files", 110),
     ("聊天服务器", "feature.chat_servers", "业务管理", "/admin/chat/servers", "system.chat_server", "fas fa-server", "chat_servers", 120),

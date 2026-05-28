@@ -90,10 +90,12 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS watch_sources(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                source_code TEXT NOT NULL UNIQUE,
+                user_name TEXT NOT NULL DEFAULT '',
+                name TEXT NOT NULL,
+                source_code TEXT NOT NULL,
                 entry_urls_json TEXT NOT NULL,
                 headers_json TEXT NOT NULL,
+                parse_rules_json TEXT NOT NULL DEFAULT '{}',
                 keywords_label TEXT NOT NULL DEFAULT '关键字',
                 page_param_name TEXT NOT NULL DEFAULT 'pn',
                 page_step INTEGER NOT NULL DEFAULT 10,
@@ -101,7 +103,9 @@ def init_db():
                 is_enabled INTEGER NOT NULL DEFAULT 1,
                 note TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT(datetime('now')),
-                updated_at TEXT NOT NULL DEFAULT(datetime('now'))
+                updated_at TEXT NOT NULL DEFAULT(datetime('now')),
+                UNIQUE(user_name, source_code),
+                UNIQUE(user_name, name)
             )
             """
         )
@@ -109,6 +113,7 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS watch_records(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_name TEXT NOT NULL DEFAULT '',
                 source_id INTEGER NOT NULL,
                 source_name TEXT NOT NULL,
                 keyword TEXT NOT NULL,
@@ -154,6 +159,9 @@ def init_db():
         )
         _ensure_column(conn, "users", "role_id", "role_id INTEGER")
         _ensure_column(conn, "users", "is_disabled", "is_disabled INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(conn, "watch_sources", "user_name", "user_name TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_sources", "parse_rules_json", "parse_rules_json TEXT NOT NULL DEFAULT '{}' ")
+        _ensure_column(conn, "watch_records", "user_name", "user_name TEXT NOT NULL DEFAULT ''")
 
         conn.execute(
             """
