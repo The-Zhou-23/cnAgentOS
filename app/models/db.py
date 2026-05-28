@@ -2,6 +2,9 @@
 import os
 import sqlite3
 
+# 从新的数据库抽象层导入统一的连接入口
+from app.models.database import get_connection as _new_get_connection
+
 
 def _project_root():
     return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
@@ -11,10 +14,8 @@ DB_PATH = os.path.join(_project_root(), "database", "app.db")
 
 
 def get_connection():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """统一数据库连接入口 - 已迁移到 database.py"""
+    return _new_get_connection()
 
 
 def _ensure_column(conn, table: str, column: str, ddl: str):

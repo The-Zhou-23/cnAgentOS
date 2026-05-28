@@ -1,8 +1,7 @@
-{% extends "base.html" %}
+{% extends "../base.html" %}
 
 {% block head_assets %}
-{% include "_portal_assets.html" %}
-{% block portal_extra_head %}{% end %}
+{% include "../_portal_assets.html" %}
 {% end %}
 
 {% block body_class %}admin-shell portal-shell{% end %}
@@ -27,10 +26,10 @@
         </div>
         <nav class="portal-nav">
             <a href="/" class="{% if active_nav == 'home' %}active{% end %}"><i class="fas fa-home"></i>首页</a>
-            <a href="/portal/query" class="{% if active_nav == 'query' %}active{% end %}"><i class="fas fa-chart-line"></i>智能问数</a>
-            <a href="/portal/chat" class="{% if active_nav == 'chat' %}active{% end %}"><i class="fas fa-comment-dots"></i>智能聊天</a>
+            <a href="/portal/query" class="{% if active_nav == 'query' %}active{% end %}"><i class="fas fa-comments"></i>智能问数</a>
+            <a href="/portal/chat" class="{% if active_nav == 'chat' %}active{% end %}"><i class="fas fa-message-circle"></i>智能聊天</a>
             <a href="/portal/watch" class="{% if active_nav == 'watch' %}active{% end %}"><i class="fas fa-binoculars"></i>智能瞭望</a>
-            <a href="/portal/sentiment" class="{% if active_nav == 'sentiment' %}active{% end %}"><i class="fas fa-chart-pie"></i>智慧舆情</a>
+            <a href="/portal/sentiment" class="{% if active_nav == 'sentiment' %}active{% end %}"><i class="fas fa-chart-line"></i>智慧舆情</a>
             <a href="/portal/digital-employee" class="{% if active_nav == 'digital' %}active{% end %}"><i class="fas fa-user-astronaut"></i>数字员工</a>
         </nav>
         <div class="portal-header-actions">
@@ -51,9 +50,4 @@
         <span class="portal-footer-muted">四川农业大学 · 团队实训项目</span>
     </footer>
 </div>
-{% end %}
-
-{% block extra_js %}
-<script src="{{ static_url('js/voice.js') }}"></script>
-<script src="{{ static_url('js/gesture.js') }}"></script>
 {% end %}

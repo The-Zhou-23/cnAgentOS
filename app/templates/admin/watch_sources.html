@@ -27,82 +27,413 @@
             </div>
         </div>
 
-        <section class="glass-strong engine-section">
-            <div class="engine-glow"></div>
-            <div class="engine-core">
-                <h2 class="engine-title"><i class="fas fa-globe-asia"></i>智能数据采集引擎</h2>
-                <p class="engine-subtitle">输入采集意图，系统自动识别关键词并调度已启用的采集源</p>
-                <form id="collectForm" class="engine-form">
-                    {% module xsrf_form_html() %}
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input
-                            type="text"
-                            name="prompt"
-                            id="prompt"
-                            class="search-input"
-                            placeholder="例如：收集四川农业大学的新闻，20条"
-                            autocomplete="off"
-                        />
-                        <button type="submit" class="search-btn" id="searchBtn">
-                            <i class="fas fa-bolt"></i>
-                            <span>开始采集</span>
+        <!-- 主采集区 -->
+        <main class="watch-main">
+            <!-- 采集引擎区 -->
+            <section class="engine-section">
+                <div class="engine-glow"></div>
+                <div class="engine-core">
+                    <h1 class="engine-title">
+                        <i class="fas fa-globe-asia"></i>
+                        智能数据采集引擎
+                    </h1>
+                    <p class="engine-subtitle">输入采集意图，AI 自动识别关键词并调度多源采集</p>
+
+                    <form id="collectForm" class="engine-form">
+                        {% module xsrf_form_html() %}
+                        <div class="search-wrapper">
+                            <i class="fas fa-search search-icon"></i>
+                            <input
+                                type="text"
+                                name="prompt"
+                                id="prompt"
+                                class="search-input"
+                                placeholder="例如：收集四川农业大学的新闻，20条"
+                                autocomplete="off"
+                            />
+                            <button type="submit" class="search-btn" id="searchBtn">
+                                <i class="fas fa-bolt"></i>
+                                <span>开始采集</span>
+                            </button>
+                        </div>
+                        
+                        <!-- 采集选项 -->
+                        <div class="collect-options">
+                            <div class="option-item">
+                                <label class="option-toggle">
+                                    <input type="checkbox" id="incremental" checked />
+                                    <!-- <span class="toggle-slider"></span> -->
+                                </label>
+                                <span class="option-label">增量采集</span>
+                                <span class="option-hint">跳过已存在的URL，避免重复采集</span>
+                            </div>
+                            
+                            <div class="option-item">
+                                <label class="option-label">采集页数</label>
+                                <input type="number" id="maxPages" class="option-input" value="1" min="1" max="10" />
+                            </div>
+                            
+                            <div class="option-item">
+                                <label class="option-label">每页数量</label>
+                                <input type="number" id="itemCount" class="option-input" value="10" min="1" max="50" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 采集源选择面板 -->
+            <section class="sources-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-layer-group"></i> 采集源配置</h3>
+                    <div class="panel-actions">
+                        <span class="panel-badge">{{ len(sources) }} 个可用源</span>
+                        <button id="addSourceBtn" class="add-source-btn">
+                            <i class="fas fa-plus"></i> 添加采集源
                         </button>
                     </div>
-                </form>
-            </div>
-        </section>
+                </div>
 
-        <section class="glass-strong sources-panel">
-            <div class="panel-header">
-                <h3><i class="fas fa-layer-group"></i> 采集源配置</h3>
-                <span class="panel-badge">{{ len(sources) }} 个可用源</span>
-            </div>
-            <div class="sources-grid">
-                {% for source in sources %}
-                <div class="source-card {% if source['is_enabled'] %}enabled{% else %}disabled{% end %}" data-source-id="{{ source['id'] }}">
-                    <div class="source-header">
-                        <div class="source-info">
-                            <h4>{{ source['name'] }}</h4>
-                            <span class="source-code">{{ source['source_code'] }}</span>
+                <div class="sources-grid">
+                    {% for source in sources %}
+                    <div class="source-card {% if source['is_enabled'] %}enabled{% else %}disabled{% end %}" data-source-id="{{ source['id'] }}">
+                        <div class="source-header">
+                            <div class="source-info">
+                                <h4>{{ source['name'] }}</h4>
+                                <span class="source-code">{{ source['source_code'] }}</span>
+                            </div>
+                            <div class="source-actions">
+                                <label class="source-toggle">
+                                    <input type="checkbox" class="source-switch" data-source-id="{{ source['id'] }}" {% if source['is_enabled'] %}checked{% end %} />
+                                    <!-- <span class="toggle-slider"></span> -->
+                                </label>
+                                <button class="delete-source-btn" data-source-id="{{ source['id'] }}" title="删除此采集源">
+                                    <i class="fas fa-trash"></i>
+                                    <span>删除</span>
+                                </button>
+                            </div>
                         </div>
-                        <label class="source-toggle">
-                            <input type="checkbox" class="source-switch" data-source-id="{{ source['id'] }}" {% if source['is_enabled'] %}checked{% end %} />
-                            <span class="toggle-slider"></span>
-                        </label>
+                        <div class="source-config">
+                            <div class="config-row">
+                                <label>基础URL</label>
+                                <input type="text" class="config-input" data-source-id="{{ source['id'] }}" data-field="base_url" value="{{ source.get('base_url', '') }}" />
+                            </div>
+                            <div class="config-row">
+                                <label>关键词标签</label>
+                                <input type="text" class="config-input" data-source-id="{{ source['id'] }}" data-field="keywords_label" value="{{ source['keywords_label'] }}" />
+                            </div>
+                            <div class="config-row">
+                                <label>分页参数</label>
+                                <input type="text" class="config-input" data-source-id="{{ source['id'] }}" data-field="page_param_name" value="{{ source['page_param_name'] }}" />
+                            </div>
+                            <div class="config-row">
+                                <label>分页步长</label>
+                                <input type="number" class="config-input" data-source-id="{{ source['id'] }}" data-field="page_step" value="{{ source['page_step'] }}" min="1" max="100" />
+                            </div>
+                            <div class="config-row">
+                                <label>采集限制</label>
+                                <input type="number" class="config-input" data-source-id="{{ source['id'] }}" data-field="collect_limit" value="{{ source['collect_limit'] }}" min="1" max="50" />
+                            </div>
+                        </div>
+                        <div class="source-footer">
+                            <span class="source-note">{{ source['note'] or '暂无说明' }}</span>
+                        </div>
                     </div>
-                    <div class="source-config">
-                        <div class="config-row">
-                            <label>每页数量</label>
-                            <input type="number" class="config-input" data-source-id="{{ source['id'] }}" data-field="collect_limit" value="{{ source['collect_limit'] }}" min="1" max="50" />
-                        </div>
-                        <div class="config-row">
-                            <label>采集页数</label>
-                            <input type="number" class="config-input" data-source-id="{{ source['id'] }}" data-field="max_pages" value="1" min="1" max="10" />
-                        </div>
-                    </div>
-                    <div class="source-footer">
-                        <span class="source-note">{{ source['note'] or '暂无说明' }}</span>
+                    {% end %}
+                </div>
+            </section>
+
+            <!-- 实时采集流 -->
+            <section class="stream-section">
+                <div class="panel-header">
+                    <h3><i class="fas fa-stream"></i> 采集实时流</h3>
+                    <span class="stream-status" id="streamStatus">等待采集...</span>
+                </div>
+                <div class="stream-box" id="streamBox">
+                    <div class="stream-placeholder">
+                        <i class="fas fa-satellite"></i>
+                        <p>输入采集意图后，实时数据流将在此显示</p>
                     </div>
                 </div>
-                {% end %}
-            </div>
-        </section>
+            </section>
+        </main>
+    </div>
 
-        <section class="glass-strong stream-section">
-            <div class="panel-header">
-                <h3><i class="fas fa-stream"></i> 采集实时流</h3>
-                <span class="stream-status" id="streamStatus">等待采集...</span>
+    <!-- 添加采集源弹窗 -->
+    <div id="addSourceModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> 添加采集源</h3>
+                <button class="modal-close" id="closeModal">×</button>
             </div>
-            <div class="stream-box" id="streamBox">
-                <div class="stream-placeholder">
-                    <i class="fas fa-satellite"></i>
-                    <p>输入采集意图后，实时数据流将在此显示</p>
+            <form id="addSourceForm">
+                {% module xsrf_form_html() %}
+                <div class="form-group">
+                    <label>采集源名称</label>
+                    <input type="text" name="name" required placeholder="例如：新浪新闻" />
                 </div>
-            </div>
-        </section>
-    </main>
-</div>
-<script src="{{ static_url('js/watch.js') }}"></script>
+                <div class="form-group">
+                    <label>源标识（英文）</label>
+                    <input type="text" name="source_code" required placeholder="例如：sina_news" />
+                </div>
+                <div class="form-group">
+                    <label>入口URL（首页）</label>
+                    <input type="text" name="entry_url_1" required placeholder="例如：https://xxx/search?q={关键词}" />
+                </div>
+                <div class="form-group">
+                    <label>入口URL（分页）</label>
+                    <input type="text" name="entry_url_2" placeholder="例如：https://xxx/search?q={关键词}&page={分页步进}" />
+                </div>
+                <div class="form-group">
+                    <label>基础URL</label>
+                    <input type="text" name="base_url" placeholder="例如：https://www.example.com" />
+                </div>
+                <div class="form-group">
+                    <label>关键词标签</label>
+                    <input type="text" name="keywords_label" value="关键词" />
+                </div>
+                <div class="form-group">
+                    <label>分页参数名</label>
+                    <input type="text" name="page_param_name" value="pn" />
+                </div>
+                <div class="form-group">
+                    <label>分页步长</label>
+                    <input type="number" name="page_step" value="10" min="1" />
+                </div>
+                <div class="form-group">
+                    <label>采集限制</label>
+                    <input type="number" name="collect_limit" value="10" min="1" max="50" />
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea name="note" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">添加采集源</button>
+                    <button type="button" id="cancelBtn">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ static_url('js/watch.js') }}"></script>
+    <script>
+        // 模态框操作
+        const addSourceBtn = document.getElementById('addSourceBtn');
+        const addSourceModal = document.getElementById('addSourceModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        addSourceBtn?.addEventListener('click', () => {
+            addSourceModal.style.display = 'flex';
+        });
+
+        closeModal?.addEventListener('click', () => {
+            addSourceModal.style.display = 'none';
+        });
+
+        cancelBtn?.addEventListener('click', () => {
+            addSourceModal.style.display = 'none';
+        });
+
+        // 添加采集源表单
+        document.getElementById('addSourceForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            
+            const entryUrls = [];
+            if (form.entry_url_1.value) entryUrls.push(form.entry_url_1.value);
+            if (form.entry_url_2.value) entryUrls.push(form.entry_url_2.value);
+            formData.append('entry_urls', JSON.stringify(entryUrls));
+            formData.append('headers', '{}');
+            formData.append('parse_rules', '{}');
+            formData.append('is_enabled', '1');
+
+            try {
+                await fetch('/admin/watch-sources/create', {
+                    method: 'POST',
+                    body: formData
+                });
+                window.location.reload();
+            } catch (err) {
+                console.error('添加采集源失败:', err);
+            }
+        });
+
+        // 删除采集源
+        document.querySelectorAll('.delete-source-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const sourceId = e.target.closest('.delete-source-btn').dataset.sourceId;
+                if (!confirm('确定删除该采集源吗？')) return;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('_xsrf', document.querySelector('[name="_xsrf"]').value);
+                    await fetch(`/admin/watch-sources/delete/${sourceId}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    window.location.reload();
+                } catch (err) {
+                    console.error('删除采集源失败:', err);
+                }
+            });
+        });
+
+        // 采集源开关逻辑
+        document.querySelectorAll('.source-switch').forEach(switchEl => {
+            switchEl.addEventListener('change', async (e) => {
+                const sourceId = e.target.dataset.sourceId;
+                const isEnabled = e.target.checked ? 1 : 0;
+                const card = e.target.closest('.source-card');
+                
+                // 更新卡片状态
+                if (isEnabled) {
+                    card.classList.add('enabled');
+                    card.classList.remove('disabled');
+                } else {
+                    card.classList.add('disabled');
+                    card.classList.remove('enabled');
+                }
+
+                // 发送更新请求
+                await updateSourceConfig(sourceId, card);
+            });
+        });
+
+        // 配置输入框变更自动保存
+        document.querySelectorAll('.config-input').forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const sourceId = e.target.dataset.sourceId;
+                const card = e.target.closest('.source-card');
+                await updateSourceConfig(sourceId, card);
+            });
+        });
+
+        async function updateSourceConfig(sourceId, card) {
+            try {
+                const formData = new FormData();
+                formData.append('_xsrf', document.querySelector('[name="_xsrf"]').value);
+                formData.append('name', card.querySelector('h4').textContent);
+                formData.append('source_code', card.querySelector('.source-code').textContent);
+                formData.append('is_enabled', card.classList.contains('enabled') ? 1 : 0);
+                formData.append('base_url', card.querySelector('[data-field="base_url"]')?.value || '');
+                formData.append('keywords_label', card.querySelector('[data-field="keywords_label"]')?.value || '关键字');
+                formData.append('page_param_name', card.querySelector('[data-field="page_param_name"]')?.value || 'pn');
+                formData.append('page_step', card.querySelector('[data-field="page_step"]')?.value || '10');
+                formData.append('collect_limit', card.querySelector('[data-field="collect_limit"]')?.value || '10');
+                formData.append('entry_urls', '[]');
+                formData.append('headers', '{}');
+                formData.append('parse_rules', '{}');
+                formData.append('note', card.querySelector('.source-note').textContent);
+
+                await fetch(`/admin/watch-sources/update/${sourceId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (err) {
+                console.error('更新采集源配置失败:', err);
+            }
+        }
+
+        // 采集表单提交
+        const form = document.getElementById('collectForm');
+        const streamBox = document.getElementById('streamBox');
+        const streamStatus = document.getElementById('streamStatus');
+        const searchBtn = document.getElementById('searchBtn');
+
+        form?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) return;
+
+            const incremental = document.getElementById('incremental').checked;
+            const maxPages = document.getElementById('maxPages').value;
+            const itemCount = document.getElementById('itemCount').value;
+
+            // 获取启用的采集源
+            const enabledSources = [];
+            document.querySelectorAll('.source-card.enabled').forEach(card => {
+                const sourceId = card.dataset.sourceId;
+                enabledSources.push({ sourceId });
+            });
+
+            if (enabledSources.length === 0) {
+                streamBox.innerHTML = '<div class="stream-error"><i class="fas fa-exclamation-triangle"></i> 请至少启用一个采集源</div>';
+                return;
+            }
+
+            // 禁用按钮，显示加载状态
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 采集中...';
+            streamStatus.textContent = '采集中...';
+            streamStatus.classList.add('active');
+            streamBox.innerHTML = '';
+
+            // 依次采集每个源
+            for (const source of enabledSources) {
+                const formData = new FormData();
+                formData.append('_xsrf', document.querySelector('[name="_xsrf"]').value);
+                formData.append('prompt', prompt);
+                formData.append('source_id', source.sourceId);
+                formData.append('item_count', itemCount);
+                formData.append('max_pages', maxPages);
+                formData.append('incremental', incremental ? 'true' : 'false');
+
+                try {
+                    const resp = await fetch('/admin/watch-collect', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!resp.ok) {
+                        streamBox.innerHTML += `<div class="stream-error">请求失败</div>`;
+                        continue;
+                    }
+
+                    const reader = resp.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buffer = '';
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const parts = buffer.split('\n\n');
+                        buffer = parts.pop() || '';
+
+                        for (const part of parts) {
+                            const line = part.split('\n').find(x => x.startsWith('data: '));
+                            if (!line) continue;
+                            try {
+                                const payload = JSON.parse(line.slice(6));
+                                if (payload.message) {
+                                    streamBox.innerHTML += `<div class="stream-line">${escapeHtml(payload.message)}</div>`;
+                                    streamBox.scrollTop = streamBox.scrollHeight;
+                                }
+                            } catch (err) {}
+                        }
+                    }
+                } catch (err) {
+                    streamBox.innerHTML += `<div class="stream-error">采集失败：${err.message}</div>`;
+                }
+            }
+
+            // 恢复按钮状态
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = '<i class="fas fa-bolt"></i> <span>开始采集</span>';
+            streamStatus.textContent = '采集完成';
+            streamStatus.classList.remove('active');
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
 </body>
 </html>
