@@ -72,6 +72,13 @@ from app.controllers.portal_chat import (
     PortalChatHandler,
     PortalChatUploadHandler,
 )
+# 成员 D：智慧舆情（任务三）
+from app.controllers.portal_sentiment import (
+    PortalBigscreenHandler,
+    PortalSentimentAnalyzeHandler,
+    PortalSentimentDataHandler,
+    PortalSentimentHandler,
+)
 from app.controllers.admin_chat import (
     AdminChatFilesHandler,
     AdminChatGroupMembersHandler,
@@ -163,6 +170,11 @@ def make_app():
             (r"/portal/chat/api/([^/]+)", PortalChatApiHandler),
             (r"/portal/chat/upload", PortalChatUploadHandler),
             (r"/portal/chat/file/(\d+)", PortalChatFileHandler),
+            # 成员 D：智慧舆情（任务三）路由
+            (r"/portal/bigscreen", PortalBigscreenHandler),
+            (r"/portal/sentiment", PortalSentimentHandler),
+            (r"/portal/sentiment/data", PortalSentimentDataHandler),
+            (r"/portal/sentiment/analyze", PortalSentimentAnalyzeHandler),
             (r"/admin/chat/groups", AdminChatGroupsHandler),
             (r"/admin/chat/groups/(\d+)/members", AdminChatGroupMembersHandler),
             (r"/admin/chat/files", AdminChatFilesHandler),
