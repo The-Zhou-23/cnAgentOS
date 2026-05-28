@@ -178,6 +178,13 @@ def init_db():
         from app.models.rbac import RBACRepository
         from app.models.feature import FeatureRepository
 
+        from app.models.chat import ChatRepository
+        from app.models.ai_tool import AIToolRepository
+
+        ChatRepository.init_schema()
+        AIToolRepository.init_schema()
+        AIToolRepository.ensure_defaults()
+
         RBACRepository.ensure_default_permissions()
         FeatureRepository.ensure_defaults()
         RBACRepository.ensure_default_role_permissions()

@@ -337,6 +337,18 @@ class DigitalEmployeeRepository:
                 yield f"{idx}. {r['title']}（来源：{r['source_name']}｜关键词：{r['keyword']}）"
                 if r["url"]:
                     yield f"   原文：{r['url']}"
+        elif kind == "dujitang" or alias == "毒鸡汤":
+            import random
+
+            quotes = [
+                "你以为有钱人很快乐吗？他们的快乐你根本想象不到。",
+                "你全力做到最好，可能还不如别人的随便搞搞。",
+                "失败并不可怕，可怕的是你还相信这句话。",
+                "当你觉得自己又丑又穷的时候，别绝望，至少你的判断是对的。",
+                "生活不止眼前的苟且，还有远方的苟且。",
+                "上帝是公平的，给了你丑的外表，还会给你一颗玻璃心。",
+            ]
+            yield random.choice(quotes)
         elif kind == "movie" or alias == "电影":
             yield (
                 "电影助手暂未绑定外部接口。请管理员在「接口管理」中新增电影类 API "
@@ -404,6 +416,16 @@ class DigitalEmployeeRepository:
                 "api_interface_id": interfaces.get("电影 API"),
                 "prompt": "如已绑定接口，则返回接口数据；否则提示管理员绑定。",
                 "config_json": '{"kind": "movie"}',
+                "is_enabled": 1,
+            },
+            {
+                "alias": "毒鸡汤",
+                "description": "群内 @ 毒鸡汤 获取随机毒鸡汤语录",
+                "employee_type": "api",
+                "model_service_id": None,
+                "api_interface_id": None,
+                "prompt": "",
+                "config_json": '{"kind": "dujitang"}',
                 "is_enabled": 1,
             },
         ]

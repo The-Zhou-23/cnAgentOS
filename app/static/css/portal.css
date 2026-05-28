@@ -697,6 +697,144 @@
     }
 }
 
+/* 数字员工大厅（与门户布局一致） */
+.de-employee-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    margin-bottom: 20px;
+}
+
+.de-employee-card {
+    padding: 18px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.de-employee-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.de-employee-card.active {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.de-employee-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.de-employee-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.de-employee-card p {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.de-empty-tip {
+    padding: 24px;
+    color: #64748b;
+    grid-column: 1 / -1;
+}
+
+.de-chat-panel {
+    padding: 22px;
+}
+
+.de-chat-history {
+    min-height: 280px;
+    max-height: 480px;
+    overflow-y: auto;
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.de-msg {
+    margin-bottom: 14px;
+    display: flex;
+    gap: 10px;
+}
+
+.de-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #fff;
+}
+
+.de-msg-user .de-avatar {
+    background: #0f172a;
+}
+
+.de-msg-bot .de-avatar {
+    background: #2563eb;
+}
+
+.de-bubble {
+    padding: 10px 14px;
+    border-radius: 14px;
+    max-width: 78%;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.7;
+}
+
+.de-msg-user .de-bubble {
+    background: #0f172a;
+    color: #fff;
+}
+
+.de-msg-bot .de-bubble {
+    background: #fff;
+    color: #1f2937;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.de-quick-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 0 6px 6px 0;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.de-quick-tag:hover {
+    background: rgba(37, 99, 235, 0.18);
+}
+
+.de-send-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
 @media (max-width: 900px) {
     .auth-wrap {
         grid-template-columns: 1fr;

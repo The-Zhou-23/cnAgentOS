@@ -14,6 +14,10 @@ PERMISSION_DEFINITIONS = [
     ("业务管理", "模型引擎", "system.model", 70),
     ("业务管理", "智能瞭望", "system.watch", 80),
     ("业务管理", "采集结果", "system.watch_record", 90),
+    ("业务管理", "聊天群管理", "system.chat_group", 100),
+    ("业务管理", "聊天文件", "system.chat_file", 110),
+    ("业务管理", "聊天服务器", "system.chat_server", 120),
+    ("业务管理", "工具集管理", "system.ai_tool", 130),
 ]
 
 # 普通管理员默认拥有的业务权限（不含角色/权限/功能菜单配置）
@@ -24,6 +28,10 @@ NORMAL_ADMIN_PERMISSION_CODES = [
     "system.model",
     "system.watch",
     "system.watch_record",
+    "system.chat_group",
+    "system.chat_file",
+    "system.chat_server",
+    "system.ai_tool",
 ]
 
 OBSOLETE_PERMISSION_CODES = ("system.menu",)

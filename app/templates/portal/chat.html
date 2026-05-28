@@ -1,0 +1,86 @@
+{% extends "../portal_base.html" %}
+
+{% block title %}{{ title }} - cnAgentOS{% end %}
+
+{% block portal_extra_head %}
+<link rel="stylesheet" href="{{ static_url('css/chat.css') }}" />
+{% end %}
+
+{% block portal_content %}
+<div class="chat-app glass-strong" data-user-id="{{ user_id }}">
+    <aside class="chat-sidebar">
+        <div class="chat-sidebar-head">
+            <h2><i class="fas fa-comments me-2"></i>智能聊天</h2>
+            <span class="chat-server-badge" id="serverBadge" title="当前节点">{{ server['name'] }}</span>
+        </div>
+        <div class="chat-tabs">
+            <button type="button" class="active" data-tab="conv">会话</button>
+            <button type="button" data-tab="contacts">通讯录</button>
+            <button type="button" data-tab="search">加好友</button>
+            <button type="button" data-tab="create">建群</button>
+        </div>
+        <div class="chat-panel active" id="panelConv">
+            <div class="chat-conv-list" id="convList"></div>
+        </div>
+        <div class="chat-panel" id="panelContacts">
+            <div id="pendingList" class="chat-pending"></div>
+            <div id="contactList" class="chat-contact-list"></div>
+        </div>
+        <div class="chat-panel" id="panelSearch">
+            <div class="chat-search-box">
+                <input type="text" id="searchKeyword" placeholder="输入用户名查找" />
+                <button type="button" id="btnSearch" class="btn btn-primary btn-sm">查找</button>
+            </div>
+            <div id="searchResults"></div>
+        </div>
+        <div class="chat-panel" id="panelCreate">
+            <form id="createGroupForm" class="chat-create-form">
+                <label>群名称</label>
+                <input type="text" name="name" required placeholder="例如：项目讨论组" />
+                <label>邀请好友</label>
+                <div id="friendCheckboxes" class="chat-checkboxes"></div>
+                <label>拉入数字员工</label>
+                <div id="digitalCheckboxes" class="chat-checkboxes">
+                    {% for d in digitals %}
+                    <label><input type="checkbox" name="digital_aliases" value="{{ d['alias'] }}" /> @{{ d['alias'] }}</label>
+                    {% end %}
+                </div>
+                <button type="submit" class="btn btn-primary w-100">创建群聊</button>
+            </form>
+        </div>
+    </aside>
+    <section class="chat-main">
+        <div class="chat-main-empty" id="chatEmpty">
+            <i class="fas fa-comment-dots"></i>
+            <p>选择左侧会话开始聊天</p>
+        </div>
+        <div class="chat-main-active d-none" id="chatActive">
+            <header class="chat-header">
+                <div>
+                    <h3 id="chatTitle">会话</h3>
+                    <p class="chat-announcement d-none" id="chatAnnouncement"></p>
+                </div>
+                <span class="chat-members-hint" id="chatMembersHint"></span>
+            </header>
+            <div class="chat-messages" id="chatMessages"></div>
+            <footer class="chat-composer">
+                <div class="chat-emoji-bar" id="emojiBar">
+                    <button type="button" data-emoji="😀">😀</button>
+                    <button type="button" data-emoji="👍">👍</button>
+                    <button type="button" data-emoji="🎉">🎉</button>
+                    <button type="button" data-emoji="❤️">❤️</button>
+                    <button type="button" data-emoji="🔥">🔥</button>
+                </div>
+                <form id="sendForm" class="chat-send-row">
+                    {% module xsrf_form_html() %}
+                    <input type="file" id="fileInput" class="d-none" />
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAttach" title="发送文件"><i class="fas fa-paperclip"></i></button>
+                    <input type="text" id="messageInput" placeholder="输入消息，群内 @数字员工 可触发回复" autocomplete="off" />
+                    <button type="submit" class="btn btn-primary">发送</button>
+                </form>
+            </footer>
+        </div>
+    </section>
+</div>
+<script src="{{ static_url('js/chat.js') }}"></script>
+{% end %}

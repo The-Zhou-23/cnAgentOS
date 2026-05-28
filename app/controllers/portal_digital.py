@@ -24,7 +24,7 @@ class _PortalBaseHandler(BaseHandler):
         # 管理员强制走后台
         if UserRepository.is_admin_role(role_code):
             self.redirect("/admin/digital-employees")
-            self.finish()
+            raise tornado.web.Finish()
 
 
 class PortalDigitalEmployeeListHandler(_PortalBaseHandler):
@@ -39,7 +39,8 @@ class PortalDigitalEmployeeListHandler(_PortalBaseHandler):
             "portal/digital_employee.html",
             title="数字员工",
             username=self.current_user,
-            role_name="普通用户",
+            role_name=self.get_current_role_name(),
+            active_nav="digital",
             employees=employees,
         )
 
