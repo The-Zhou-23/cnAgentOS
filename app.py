@@ -59,6 +59,7 @@ from app.controllers.portal_digital import (
     PortalDigitalEmployeeChatHandler,
     PortalDigitalEmployeeListHandler,
 )
+from app.controllers.voice_tts import VoiceTTSHandler
 from app.controllers.auth import LoginHandler, LogoutHandler, RegisterHandler
 from app.controllers.home import IndexHandler
 from app.controllers._temp_a_portal_stubs import (
@@ -167,6 +168,7 @@ def make_app():
             # 用户侧数字员工大厅（成员 D）
             (r"/portal/digital-employee", PortalDigitalEmployeeListHandler),
             (r"/portal/digital-employee/chat", PortalDigitalEmployeeChatHandler),
+            (r"/api/voice/tts", VoiceTTSHandler),
             (r"/portal/chat", PortalChatHandler),
             (r"/portal/chat/api/([^/]+)", PortalChatApiHandler),
             (r"/portal/chat/upload", PortalChatUploadHandler),
