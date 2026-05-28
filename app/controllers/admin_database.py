@@ -2,6 +2,7 @@
 
 import json
 import tornado.web
+from app.controllers.base import AdminBaseHandler
 from app.models.database import (
     get_db_type, set_db_type, test_connection, 
     update_mysql_config, get_database_config,
@@ -10,10 +11,9 @@ from app.models.database import (
 from app.models.mysql_schema import init_mysql_schema
 
 
-class AdminDatabaseSettingsHandler(tornado.web.RequestHandler):
+class AdminDatabaseSettingsHandler(AdminBaseHandler):
     """数据库设置页面"""
     
-    @tornado.web.authenticated
     def get(self):
         config = get_database_config()
         current_db_type = get_db_type()
@@ -28,10 +28,9 @@ class AdminDatabaseSettingsHandler(tornado.web.RequestHandler):
         )
 
 
-class AdminDatabaseTestHandler(tornado.web.RequestHandler):
+class AdminDatabaseTestHandler(AdminBaseHandler):
     """测试数据库连接"""
     
-    @tornado.web.authenticated
     def post(self):
         try:
             db_type = self.get_body_argument("db_type", "")
@@ -64,10 +63,9 @@ class AdminDatabaseTestHandler(tornado.web.RequestHandler):
             }))
 
 
-class AdminDatabaseSaveHandler(tornado.web.RequestHandler):
+class AdminDatabaseSaveHandler(AdminBaseHandler):
     """保存数据库配置"""
     
-    @tornado.web.authenticated
     def post(self):
         try:
             db_type = self.get_body_argument("db_type", "")
@@ -112,10 +110,9 @@ class AdminDatabaseSaveHandler(tornado.web.RequestHandler):
             }))
 
 
-class AdminDatabaseMigrateHandler(tornado.web.RequestHandler):
+class AdminDatabaseMigrateHandler(AdminBaseHandler):
     """数据库迁移页面"""
     
-    @tornado.web.authenticated
     def get(self):
         self.render(
             "admin/database_migrate.html",
