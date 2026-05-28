@@ -14,6 +14,10 @@ FEATURE_DEFINITIONS = [
     ("模型引擎", "feature.models", "业务管理", "/admin/models", "system.model", "fas fa-microchip", "models", 70),
     ("智能瞭望采集", "feature.watch", "业务管理", "/admin/watch-sources", "system.watch", "fas fa-satellite-dish", "watch_sources", 80),
     ("采集结果", "feature.watch_records", "业务管理", "/admin/watch-records", "system.watch_record", "fas fa-database", "watch_records", 90),
+    ("聊天群管理", "feature.chat_groups", "业务管理", "/admin/chat/groups", "system.chat_group", "fas fa-users", "chat_groups", 100),
+    ("聊天文件", "feature.chat_files", "业务管理", "/admin/chat/files", "system.chat_file", "fas fa-folder-open", "chat_files", 110),
+    ("聊天服务器", "feature.chat_servers", "业务管理", "/admin/chat/servers", "system.chat_server", "fas fa-server", "chat_servers", 120),
+    ("工具集管理", "feature.tools", "业务管理", "/admin/tools", "system.ai_tool", "fas fa-toolbox", "tools", 130),
 ]
 
 
@@ -40,14 +44,14 @@ class FeatureRepository:
                     """,
                     (name, code, menu_group, route_path, permission_code, icon, active_page, sort_no),
                 )
+                # 仅同步开发侧字段，不覆盖用户在「功能菜单」中改的排序/名称/分组
                 conn.execute(
                     """
                     UPDATE features SET
-                        name=?, menu_group=?, route_path=?, permission_code=?,
-                        icon=?, active_page=?, sort_no=?
+                        route_path=?, permission_code=?, icon=?, active_page=?
                     WHERE code=?
                     """,
-                    (name, menu_group, route_path, permission_code, icon, active_page, sort_no, code),
+                    (route_path, permission_code, icon, active_page, code),
                 )
 
             valid_codes = {item[1] for item in FEATURE_DEFINITIONS}
@@ -60,7 +64,7 @@ class FeatureRepository:
     def list_features():
         with get_connection() as conn:
             return conn.execute(
-                "select * from features order by menu_group, sort_no asc, id asc"
+                "select * from features order by sort_no asc, menu_group asc, id asc"
             ).fetchall()
 
     @staticmethod
@@ -89,9 +93,8 @@ class FeatureRepository:
 
     @staticmethod
     def list_sidebar_features(role_id: int | None, role_code: str | None):
-        features = FeatureRepository.list_features()
         visible = []
-        for feature in features:
+        for feature in FeatureRepository.list_features():
             if not feature["is_enabled"]:
                 continue
             perm_code = feature["permission_code"]
@@ -99,7 +102,8 @@ class FeatureRepository:
                 continue
             if RBACRepository.role_has_permission(role_id, role_code, perm_code):
                 visible.append(feature)
-        return visible
+        # 与功能菜单页一致：全局按 sort_no，再按 id
+        return sorted(visible, key=lambda f: (int(f["sort_no"] or 0), int(f["id"])))
 
     @staticmethod
     def update_feature(feature_id: int, data: dict) -> bool:

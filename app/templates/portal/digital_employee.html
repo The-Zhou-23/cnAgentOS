@@ -1,130 +1,63 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
-    <style>
-        .portal-shell { min-height: 100vh; padding: 28px; }
-        .portal-header {
-            display:flex; justify-content:space-between; align-items:center;
-            flex-wrap:wrap; gap:16px; margin-bottom:24px;
-        }
-        .badge-soft { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:rgba(37,99,235,0.10); color:#1d4ed8; font-size:13px; }
-        .employee-grid {
-            display:grid; gap:16px;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            margin-bottom:24px;
-        }
-        .employee-card {
-            padding:18px; cursor:pointer; transition:.2s;
-            border:1px solid rgba(15,23,42,0.08);
-            background:rgba(255,255,255,0.92);
-            border-radius:18px;
-        }
-        .employee-card:hover { transform:translateY(-2px); box-shadow:0 16px 40px rgba(15,23,42,0.08); }
-        .employee-card.active { border-color:#2563eb; box-shadow:0 0 0 4px rgba(37,99,235,0.10); }
-        .employee-icon {
-            width:44px; height:44px; border-radius:12px;
-            display:inline-flex; align-items:center; justify-content:center;
-            background:rgba(37,99,235,0.12); color:#2563eb; font-size:18px; margin-bottom:10px;
-        }
-        .employee-card h3 { font-size:16px; font-weight:700; margin-bottom:6px; }
-        .employee-card p { color:#64748b; font-size:13px; line-height:1.6; margin:0; }
-        .chat-card { padding:22px; background:#fff; border:1px solid #e5e7eb; border-radius:20px; box-shadow:0 12px 36px rgba(15,23,42,0.05); }
-        .chat-history {
-            min-height:320px; max-height:520px; overflow-y:auto;
-            background:#f8fafc; border:1px solid #e5e7eb; border-radius:14px;
-            padding:16px; margin-bottom:14px;
-        }
-        .msg { margin-bottom:14px; display:flex; gap:10px; }
-        .msg .avatar {
-            width:32px; height:32px; border-radius:50%; flex-shrink:0;
-            display:inline-flex; align-items:center; justify-content:center;
-            font-size:14px; color:#fff;
-        }
-        .msg.user .avatar { background:#0f172a; }
-        .msg.bot  .avatar { background:#2563eb; }
-        .msg .bubble {
-            padding:10px 14px; border-radius:14px; max-width:78%;
-            white-space:pre-wrap; word-break:break-word; line-height:1.7;
-        }
-        .msg.user .bubble { background:#0f172a; color:#fff; }
-        .msg.bot  .bubble { background:#fff; color:#1f2937; border:1px solid #e5e7eb; }
-        .quick-tag {
-            display:inline-block; padding:4px 10px; margin:0 6px 6px 0; border-radius:999px;
-            background:#eef2ff; color:#1d4ed8; font-size:12px; cursor:pointer;
-        }
-        .quick-tag:hover { background:#e0e7ff; }
-    </style>
-</head>
-<body class="admin-shell">
-<div class="portal-shell">
-    <div class="portal-header">
-        <div>
-            <div class="badge-soft mb-2"><i class="fas fa-user-astronaut me-1"></i>数字员工</div>
-            <h1 class="title-large mb-1">数字员工大厅</h1>
-            <div class="text-secondary">点击下方任意员工卡片，自动填充 @别名，再描述你的诉求即可。</div>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <a class="btn btn-outline-secondary" href="/"><i class="fas fa-home me-1"></i>返回门户</a>
-            <form action="/auth/logout" method="post" class="m-0">
-                {% module xsrf_form_html() %}
-                <button type="submit" class="btn btn-outline-secondary">退出登录</button>
-            </form>
-        </div>
-    </div>
+{% extends "../portal_base.html" %}
 
-    <div class="employee-grid" id="employeeGrid">
-        {% for e in employees %}
-        <div class="employee-card" data-alias="{{ e['alias'] }}" data-type="{{ e['employee_type'] }}">
-            <div class="employee-icon">
-                {% if e['employee_type'] == 'api' %}
-                    <i class="fas fa-plug"></i>
-                {% else %}
-                    <i class="fas fa-robot"></i>
-                {% end %}
-            </div>
-            <h3>@{{ e['alias'] }}</h3>
-            <p>{{ e['description'] or '通用数字员工' }}</p>
-        </div>
-        {% end %}
-        {% if not employees %}
-        <div class="text-secondary">当前暂无可用数字员工，请联系管理员配置。</div>
-        {% end %}
-    </div>
-
-    <div class="chat-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="badge-soft"><i class="fas fa-comments me-1"></i>多轮对话</div>
-            <button id="clearBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-trash me-1"></i>清空对话</button>
-        </div>
-
-        <div id="chatHistory" class="chat-history">
-            <div class="msg bot">
-                <div class="avatar"><i class="fas fa-robot"></i></div>
-                <div class="bubble">你好，{{ username }}。请先点击上方员工卡片选择一个数字员工，或直接输入 <code>@员工别名 + 你的问题</code> 开始对话。</div>
-            </div>
-        </div>
-
-        <div class="mb-2">
-            <span class="quick-tag" data-tip="@川小农 帮我介绍一下智慧农业">@川小农 智慧农业介绍</span>
-            <span class="quick-tag" data-tip="@天气 雅安市天气怎么样">@天气 雅安市</span>
-            <span class="quick-tag" data-tip="@音乐 来一首随机音乐">@音乐 随机一首</span>
-        </div>
-
-        <form id="chatForm" class="d-flex gap-2">
-            {% module xsrf_form_html() %}
-            <input id="chatInput" name="message" class="form-control form-control-lg" placeholder="例如：@川小农 帮我介绍智慧农业">
-            <button type="submit" class="btn btn-dark btn-lg" id="sendBtn">
-                <i class="fas fa-paper-plane me-1"></i>发送
-            </button>
-        </form>
-    </div>
+{% block portal_content %}
+<div class="portal-page-head">
+    <div class="kicker"><i class="fas fa-user-astronaut me-2"></i>数字员工</div>
+    <h1 class="title-large">数字员工大厅</h1>
+    <p class="subtitle">点击下方员工卡片自动填充 @别名，在同一门户布局下与助手多轮对话。</p>
 </div>
+
+<div class="de-employee-grid" id="employeeGrid">
+    {% for e in employees %}
+    <div class="de-employee-card glass-strong" data-alias="{{ e['alias'] }}" data-type="{{ e['employee_type'] }}">
+        <div class="de-employee-icon">
+            {% if e['employee_type'] == 'api' %}
+            <i class="fas fa-plug"></i>
+            {% else %}
+            <i class="fas fa-robot"></i>
+            {% end %}
+        </div>
+        <h3>@{{ e['alias'] }}</h3>
+        <p>{{ e['description'] or '通用数字员工' }}</p>
+    </div>
+    {% end %}
+    {% if not employees %}
+    <div class="glass-strong de-empty-tip">当前暂无可用数字员工，请联系管理员配置。</div>
+    {% end %}
+</div>
+
+<div class="glass-strong de-chat-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="badge-soft"><i class="fas fa-comments me-1"></i>多轮对话</span>
+        <button type="button" id="clearBtn" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-trash me-1"></i>清空对话
+        </button>
+    </div>
+
+    <div id="chatHistory" class="de-chat-history">
+        <div class="de-msg de-msg-bot">
+            <div class="de-avatar"><i class="fas fa-robot"></i></div>
+            <div class="de-bubble">你好，{{ username }}。请先点击上方员工卡片，或直接输入 <code>@员工别名 + 你的问题</code> 开始对话。</div>
+        </div>
+    </div>
+
+    <div class="de-quick-tags mb-2">
+        <span class="de-quick-tag" data-tip="@川小农 帮我介绍一下智慧农业">@川小农 智慧农业</span>
+        <span class="de-quick-tag" data-tip="@天气 雅安市天气怎么样">@天气 雅安市</span>
+        <span class="de-quick-tag" data-tip="@音乐 来一首随机音乐">@音乐 随机一首</span>
+        <span class="de-quick-tag" data-tip="@毒鸡汤">@毒鸡汤</span>
+    </div>
+
+    <form id="chatForm" class="de-send-row">
+        {% module xsrf_form_html() %}
+        <input id="chatInput" name="message" class="form-control" placeholder="例如：@川小农 帮我介绍智慧农业" autocomplete="off" />
+        <button type="submit" class="btn btn-primary" id="sendBtn">
+            <i class="fas fa-paper-plane me-1"></i>发送
+        </button>
+    </form>
+</div>
+{% end %}
+
+{% block extra_js %}
 <script src="{{ static_url('js/digital_employee.js') }}"></script>
-</body>
-</html>
+{% end %}

@@ -22,6 +22,10 @@ ADMIN_ROUTE_PERMISSION_FALLBACK = {
     "/admin/features/update": "system.feature",
     "/admin/watch-collect": "system.watch",
     "/admin/watch-records/batch-delete": "system.watch_record",
+    "/admin/chat/groups": "system.chat_group",
+    "/admin/chat/files": "system.chat_file",
+    "/admin/chat/servers": "system.chat_server",
+    "/admin/tools": "system.ai_tool",
 }
 
 

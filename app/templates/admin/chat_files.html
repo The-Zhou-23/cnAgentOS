@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - cnAgentOS</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+</head>
+<body class="admin-shell">
+<div class="page-shell">
+    {% set active_page = 'chat_files' %}
+    {% include "_sidebar.html" %}
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="kicker"><i class="fas fa-folder-open me-2"></i>智能聊天</div>
+                <h1 class="title-large mb-0">文件管理</h1>
+                <p class="subtitle mb-0">按 SHA256 去重，相同文件仅存储一份</p>
+            </div>
+        </div>
+        <section class="glass-strong p-4">
+            <table class="table table-hover">
+                <thead>
+                    <tr><th>ID</th><th>文件名</th><th>Hash</th><th>大小</th><th>上传时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                    {% for f in files %}
+                    <tr>
+                        <td>{{ f['id'] }}</td>
+                        <td>{{ f['original_name'] }}</td>
+                        <td><code class="small">{{ f['file_hash'][:16] }}…</code></td>
+                        <td>{{ f['size'] }} B</td>
+                        <td>{{ f['created_at'] }}</td>
+                        <td>
+                            <form method="post" class="d-inline" onsubmit="return confirm('删除文件？')">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="file_id" value="{{ f['id'] }}" />
+                                <button class="btn btn-sm btn-outline-danger">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% end %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - cnAgentOS</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+</head>
+<body class="admin-shell">
+<div class="page-shell">
+    {% set active_page = 'chat_servers' %}
+    {% include "_sidebar.html" %}
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="kicker"><i class="fas fa-server me-2"></i>智能聊天</div>
+                <h1 class="title-large mb-0">服务器管理</h1>
+                <p class="subtitle mb-0">用户端自动选择主节点或权重最高的可用节点</p>
+            </div>
+        </div>
+        <section class="glass-strong p-4 mb-4">
+            <h5>新增节点</h5>
+            <form method="post" class="row g-2">
+                {% module xsrf_form_html() %}
+                <input type="hidden" name="action" value="create" />
+                <div class="col-md-3"><input class="form-control" name="name" placeholder="节点名称" required /></div>
+                <div class="col-md-4"><input class="form-control" name="base_url" placeholder="http://127.0.0.1:10087" required /></div>
+                <div class="col-md-2"><input class="form-control" name="weight" value="100" placeholder="权重" /></div>
+                <div class="col-md-2">
+                    <select class="form-select" name="is_active"><option value="1">启用</option><option value="0">停用</option></select>
+                </div>
+                <div class="col-md-1"><label class="form-check"><input type="checkbox" name="is_primary" value="1" /> 主</label></div>
+                <div class="col-12"><button class="btn btn-primary">添加</button></div>
+            </form>
+        </section>
+        <section class="glass-strong p-4">
+            <table class="table">
+                <thead><tr><th>名称</th><th>地址</th><th>权重</th><th>状态</th><th>主节点</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for s in servers %}
+                    <tr>
+                        <td>{{ s['name'] }}</td>
+                        <td>{{ s['base_url'] }}</td>
+                        <td>{{ s['weight'] }}</td>
+                        <td>{% if s['is_active'] %}启用{% else %}停用{% end %}</td>
+                        <td>{% if s['is_primary'] %}是{% else %}否{% end %}</td>
+                        <td>
+                            <form method="post" class="d-inline" onsubmit="return confirm('删除？')">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="delete" />
+                                <input type="hidden" name="server_id" value="{{ s['id'] }}" />
+                                <button class="btn btn-sm btn-outline-danger">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% end %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+</body>
+</html>

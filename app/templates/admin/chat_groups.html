@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - cnAgentOS</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+</head>
+<body class="admin-shell">
+<div class="page-shell">
+    {% set active_page = 'chat_groups' %}
+    {% include "_sidebar.html" %}
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="kicker"><i class="fas fa-users me-2"></i>智能聊天</div>
+                <h1 class="title-large mb-0">群管理</h1>
+            </div>
+            <span class="badge-soft">{{ username }}</span>
+        </div>
+        <section class="glass-strong p-4">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>群名称</th>
+                        <th>群主</th>
+                        <th>成员数</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in groups %}
+                    <tr>
+                        <td>{{ g['id'] }}</td>
+                        <td>{{ g['name'] }}</td>
+                        <td>{{ g['owner_name'] or '-' }}</td>
+                        <td>{{ g['member_count'] }}</td>
+                        <td>
+                            {% if g['status'] == 'active' %}<span class="badge bg-success">正常</span>
+                            {% elif g['status'] == 'banned' %}<span class="badge bg-danger">封禁</span>
+                            {% else %}<span class="badge bg-secondary">{{ g['status'] }}</span>{% end %}
+                        </td>
+                        <td class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewMembers({{ g['id'] }})">成员</button>
+                            <form method="post" class="d-inline" onsubmit="return confirm('确定解散？')">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="dissolve" />
+                                <input type="hidden" name="group_id" value="{{ g['id'] }}" />
+                                <button class="btn btn-sm btn-outline-danger">解散</button>
+                            </form>
+                            {% if g['status'] != 'banned' %}
+                            <form method="post" class="d-inline">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="ban" />
+                                <input type="hidden" name="group_id" value="{{ g['id'] }}" />
+                                <button class="btn btn-sm btn-outline-warning">封禁</button>
+                            </form>
+                            {% else %}
+                            <form method="post" class="d-inline">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="unban" />
+                                <input type="hidden" name="group_id" value="{{ g['id'] }}" />
+                                <button class="btn btn-sm btn-outline-success">解封</button>
+                            </form>
+                            {% end %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="announce({{ g['id'] }})">公告</button>
+                        </td>
+                    </tr>
+                    {% end %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+<script>
+function viewMembers(id) {
+    fetch('/admin/chat/groups/' + id + '/members').then(r => r.json()).then(d => {
+        alert((d.members || []).map(m => m.name + '(' + m.type + ')').join('\n') || '无成员');
+    });
+}
+function announce(id) {
+    const text = prompt('输入群公告内容');
+    if (!text) return;
+    const f = document.createElement('form');
+    f.method = 'post';
+    f.action = '/admin/chat/groups';
+    const xsrf = document.querySelector('input[name="_xsrf"]');
+    if (xsrf) {
+        const i = document.createElement('input');
+        i.name = '_xsrf'; i.value = xsrf.value; f.appendChild(i);
+    }
+    [['action','announce'],['group_id',id],['announcement',text]].forEach(([n,v]) => {
+        const i = document.createElement('input'); i.type='hidden'; i.name=n; i.value=v; f.appendChild(i);
+    });
+    document.body.appendChild(f); f.submit();
+}
+</script>
+</body>
+</html>

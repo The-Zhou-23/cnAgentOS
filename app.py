@@ -66,6 +66,19 @@ from app.controllers._temp_a_portal_stubs import (
     TempPortalQueryHandler,
 )
 from app.controllers.portal_watch import PortalWatchListHandler, PortalWatchDetailHandler
+from app.controllers.portal_chat import (
+    PortalChatApiHandler,
+    PortalChatFileHandler,
+    PortalChatHandler,
+    PortalChatUploadHandler,
+)
+from app.controllers.admin_chat import (
+    AdminChatFilesHandler,
+    AdminChatGroupMembersHandler,
+    AdminChatGroupsHandler,
+    AdminChatServersHandler,
+)
+from app.controllers.admin_tools import AdminToolsHandler
 from app.models.db import get_connection, init_db
 from app.models.model_service import ModelServiceRepository
 from app.models.digital_employee import DigitalEmployeeRepository
@@ -83,6 +96,8 @@ def ensure_demo_users():
         user_role = conn.execute("select id from roles where code = 'normal_user'").fetchone()
         if user_role and not UserRepository.get_user_by_username("user"):
             UserRepository.create_user("user", "123456", user_role["id"])
+        if user_role and not UserRepository.get_user_by_username("user2"):
+            UserRepository.create_user("user2", "123456", user_role["id"])
 
 
 def make_app():
@@ -144,6 +159,15 @@ def make_app():
             # 用户侧数字员工大厅（成员 D）
             (r"/portal/digital-employee", PortalDigitalEmployeeListHandler),
             (r"/portal/digital-employee/chat", PortalDigitalEmployeeChatHandler),
+            (r"/portal/chat", PortalChatHandler),
+            (r"/portal/chat/api/([^/]+)", PortalChatApiHandler),
+            (r"/portal/chat/upload", PortalChatUploadHandler),
+            (r"/portal/chat/file/(\d+)", PortalChatFileHandler),
+            (r"/admin/chat/groups", AdminChatGroupsHandler),
+            (r"/admin/chat/groups/(\d+)/members", AdminChatGroupMembersHandler),
+            (r"/admin/chat/files", AdminChatFilesHandler),
+            (r"/admin/chat/servers", AdminChatServersHandler),
+            (r"/admin/tools", AdminToolsHandler),
             (r"/admin/watch-sources", AdminWatchSourceListHandler),
             (r"/admin/watch-sources/create", AdminWatchSourceCreateHandler),
             (r"/admin/watch-sources/update/(\d+)", AdminWatchSourceUpdateHandler),

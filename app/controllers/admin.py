@@ -260,8 +260,14 @@ class AdminFeatureListHandler(AdminBaseHandler):
     def get(self):
         features = FeatureRepository.list_features()
         feature_groups: dict[str, list] = {}
+        group_order: list[str] = []
         for feature in features:
-            feature_groups.setdefault(feature["menu_group"], []).append(feature)
+            group = feature["menu_group"]
+            if group not in feature_groups:
+                feature_groups[group] = []
+                group_order.append(group)
+            feature_groups[group].append(feature)
+        feature_group_list = [(g, feature_groups[g]) for g in group_order]
         current_user_record = UserRepository.get_user_by_username(self.current_user)
         current_role_code = UserRepository.get_role_code(current_user_record)
         self.render(
@@ -270,7 +276,7 @@ class AdminFeatureListHandler(AdminBaseHandler):
             username=self.current_user,
             features=features,
             feature_groups=feature_groups,
-            feature_group_list=sorted(feature_groups.items(), key=lambda item: item[0]),
+            feature_group_list=feature_group_list,
             current_role_code=current_role_code,
             active_page="features",
         )
