@@ -211,13 +211,19 @@ def check_static_assets():
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "static", "dist")
     required = [
         "bootstrap-5.3.8-dist/css/bootstrap.min.css",
+        "bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js",
         "fontawesome-free-5.15.4-web/css/all.min.css",
+        "fontawesome-free-5.15.4-web/webfonts/fa-solid-900.woff2",
+        "fontawesome-free-5.15.4-web/webfonts/fa-regular-400.woff2",
+        "fontawesome-free-5.15.4-web/webfonts/fa-brands-400.woff2",
     ]
     missing = [p for p in required if not os.path.isfile(os.path.join(base, *p.split("/")))]
     if missing:
         print("[警告] 缺少本地静态资源，页面样式可能异常。请解压前端组件到 app/static/dist/：")
         for item in missing:
             print(f"  - {item}")
+    else:
+        print("[OK] 静态资源检查通过")
 
 
 if __name__ == "__main__":
