@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ title }}</title>
+    <title>{{ title }} - cnAgentOS</title>
     <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}" />
     <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}" />
     <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
     <link rel="stylesheet" href="{{ static_url('css/watch.css') }}" />
 </head>
-<body class="watch-shell">
-    <div class="watch-container">
-        <!-- 顶部导航 -->
-        <header class="watch-header">
-            <div class="watch-logo">
-                <i class="fas fa-satellite-dish"></i>
-                <span>智能瞭望</span>
+<body class="admin-shell">
+<div class="page-shell">
+    {% set active_page = 'watch_sources' %}
+    {% include "_sidebar.html" %}
+
+    <main class="main watch-admin-main">
+        <div class="topbar watch-admin-topbar">
+            <div>
+                <div class="kicker"><i class="fas fa-satellite-dish me-2"></i>智能瞭望</div>
+                <h1 class="title-large mb-0">数据采集</h1>
+                <div class="subtitle">输入采集意图，调度多源采集并实时查看采集流</div>
             </div>
-            <nav class="watch-nav">
-                <a href="/admin/watch-sources" class="active"><i class="fas fa-search"></i> 数据采集</a>
-                <a href="/admin/watch-records"><i class="fas fa-database"></i> 数据仓库</a>
-                <a href="/"><i class="fas fa-home"></i> 返回首页</a>
-            </nav>
-            <div class="watch-user">
-                <span class="user-badge"><i class="fas fa-user-circle"></i> {{ username }}</span>
+            <div class="watch-admin-actions">
+                <a class="btn btn-outline-primary" href="/admin/watch-records"><i class="fas fa-database me-2"></i>查看采集结果</a>
+                <span class="badge-soft"><i class="fas fa-user me-2"></i>{{ username }}</span>
             </div>
-        </header>
+        </div>
 
         <!-- 主采集区 -->
         <main class="watch-main">

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - cnAgentOS</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+</head>
+<body class="admin-shell">
+<div class="page-shell">
+    {% set active_page = 'tools' %}
+    {% include "_sidebar.html" %}
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="kicker"><i class="fas fa-toolbox me-2"></i>数字员工</div>
+                <h1 class="title-large mb-0">工具集管理</h1>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <section class="glass-strong p-4">
+                    <h5>工具列表</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        {% for t in tools %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><strong>{{ t['name'] }}</strong> <small class="text-muted">{{ t['tool_type'] }}</small><br>{{ t['description'] }}</span>
+                            <form method="post">
+                                {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="delete_tool" />
+                                <input type="hidden" name="tool_id" value="{{ t['id'] }}" />
+                                <button class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% end %}
+                    </ul>
+                    <h6>新增工具</h6>
+                    <form method="post">
+                        {% module xsrf_form_html() %}
+                        <input type="hidden" name="action" value="create_tool" />
+                        <input class="form-control mb-2" name="name" placeholder="工具名称" required />
+                        <select class="form-select mb-2" name="tool_type">
+                            <option value="http">HTTP 接口</option>
+                            <option value="internal">内置能力</option>
+                        </select>
+                        <textarea class="form-control mb-2" name="description" placeholder="说明"></textarea>
+                        <textarea class="form-control mb-2" name="config_json" placeholder='{"api":"天气 API"}'>{}</textarea>
+                        <button class="btn btn-primary w-100">添加工具</button>
+                    </form>
+                </section>
+            </div>
+            <div class="col-lg-7">
+                <section class="glass-strong p-4">
+                    <h5>绑定到数字员工</h5>
+                    {% for emp in employees %}
+                    <form method="post" class="border rounded p-3 mb-3">
+                        {% module xsrf_form_html() %}
+                        <input type="hidden" name="action" value="bind" />
+                        <input type="hidden" name="employee_id" value="{{ emp['id'] }}" />
+                        <div class="fw-bold mb-2">@{{ emp['alias'] }} — {{ emp['description'] }}</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for t in tools %}
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="tool_ids" value="{{ t['id'] }}"
+                                    {% if t['id'] in bindings.get(emp['id'], []) %}checked{% end %} />
+                                {{ t['name'] }}
+                            </label>
+                            {% end %}
+                        </div>
+                        <button class="btn btn-sm btn-primary mt-2">保存绑定</button>
+                    </form>
+                    {% end %}
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

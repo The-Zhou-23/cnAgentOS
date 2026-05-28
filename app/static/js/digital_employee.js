@@ -38,14 +38,14 @@
 
     function appendMsg(role, text) {
         const wrap = document.createElement('div');
-        wrap.className = 'msg ' + role;
+        wrap.className = 'de-msg ' + (role === 'user' ? 'de-msg-user' : 'de-msg-bot');
         const avatar = document.createElement('div');
-        avatar.className = 'avatar';
+        avatar.className = 'de-avatar';
         avatar.innerHTML = role === 'user'
             ? '<i class="fas fa-user"></i>'
             : '<i class="fas fa-robot"></i>';
         const bubble = document.createElement('div');
-        bubble.className = 'bubble';
+        bubble.className = 'de-bubble';
         bubble.textContent = text;
         wrap.appendChild(avatar);
         wrap.appendChild(bubble);
@@ -57,9 +57,9 @@
     // 员工卡片点击 → 填充 @别名
     if (grid) {
         grid.addEventListener('click', (e) => {
-            const card = e.target.closest('.employee-card');
+            const card = e.target.closest('.de-employee-card');
             if (!card) return;
-            grid.querySelectorAll('.employee-card.active').forEach(el => el.classList.remove('active'));
+            grid.querySelectorAll('.de-employee-card.active').forEach(el => el.classList.remove('active'));
             card.classList.add('active');
             const alias = card.dataset.alias;
             const cur = input.value.trim();
@@ -72,7 +72,7 @@
     }
 
     // 快捷提示标签
-    document.querySelectorAll('.quick-tag').forEach(tag => {
+    document.querySelectorAll('.de-quick-tag').forEach(tag => {
         tag.addEventListener('click', () => {
             input.value = tag.dataset.tip || tag.textContent;
             input.focus();

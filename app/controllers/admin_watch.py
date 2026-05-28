@@ -19,7 +19,13 @@ class AdminWatchSourceListHandler(AdminBaseHandler):
             # 初始化默认采集源
             WatchtowerRepository.init_default_sources()
             sources = WatchtowerRepository.list_sources()
-        self.render("admin/watch_sources.html", title="瞭望数据源管理", username=self.current_user, sources=sources)
+        self.render(
+            "admin/watch_sources.html",
+            title="瞭望数据源管理",
+            username=self.current_user,
+            sources=sources,
+            active_page="watch_sources",
+        )
 
 
 class AdminWatchSourceCreateHandler(AdminBaseHandler):
@@ -189,9 +195,20 @@ class AdminWatchRecordListHandler(AdminBaseHandler):
         start_no = total - (page - 1) * page_size
         has_prev = page > 1
         has_next = page < total_pages
-        self.render("admin/watch_records.html", title="采集结果", username=self.current_user,
-                    records=records, page=page, page_size=page_size, total=total,
-                    total_pages=total_pages, start_no=start_no, has_prev=has_prev, has_next=has_next)
+        self.render(
+            "admin/watch_records.html",
+            title="采集结果",
+            username=self.current_user,
+            records=records,
+            page=page,
+            page_size=page_size,
+            total=total,
+            total_pages=total_pages,
+            start_no=start_no,
+            has_prev=has_prev,
+            has_next=has_next,
+            active_page="watch_records",
+        )
 
 
 class AdminWatchRecordDeleteHandler(AdminBaseHandler):

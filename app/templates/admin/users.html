@@ -6,7 +6,6 @@
     <title>{{ title }}</title>
     <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
 </head>
 <body class="admin-shell">
@@ -235,6 +234,5 @@ const checkAll = document.getElementById('checkAll');
 checkAll?.addEventListener('change', () => document.querySelectorAll('input[name="user_ids"]:not(:disabled)').forEach(cb => cb.checked = checkAll.checked));
 </script>
 <script src="{{ static_url('dist/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js') }}"></script>
-<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
 </body>
 </html>

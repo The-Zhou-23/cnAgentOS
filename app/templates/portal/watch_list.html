@@ -1,104 +1,98 @@
 {% extends "portal_base.html" %}
 
 {% block portal_content %}
-<div class="watch-portal-wrap">
-    <!-- 页面头部 -->
-    <div class="watch-portal-header">
-        <div>
-            <h1 class="watch-portal-title"><i class="fas fa-binoculars"></i> 智能瞭望</h1>
-            <p class="watch-portal-desc">浏览已采集的数据瞭望内容，掌握关键动态与资讯信息</p>
+<div class="portal-page-head">
+    <div class="kicker"><i class="fas fa-binoculars me-2"></i>智能瞭望</div>
+    <h1 class="title-large">数据瞭望浏览</h1>
+    <p class="subtitle">浏览已采集的数据瞭望内容，掌握关键动态与资讯信息</p>
+</div>
+
+<div class="glass-strong portal-welcome-card watch-portal-summary">
+    <div class="watch-stats">
+        <div class="watch-stat-item">
+            <span class="watch-stat-value">{{ total }}</span>
+            <span class="watch-stat-label">总记录</span>
         </div>
-        <div class="watch-stats">
-            <div class="watch-stat-item">
-                <span class="watch-stat-value">{{ total }}</span>
-                <span class="watch-stat-label">总记录</span>
-            </div>
-            <div class="watch-stat-item">
-                <span class="watch-stat-value">{{ len(sources) }}</span>
-                <span class="watch-stat-label">数据源</span>
-            </div>
+        <div class="watch-stat-item">
+            <span class="watch-stat-value">{{ len(sources) }}</span>
+            <span class="watch-stat-label">数据源</span>
         </div>
     </div>
+</div>
 
-    <!-- 筛选区 -->
-    <div class="watch-filter-bar">
-        <form class="watch-filter-form" method="get" action="/portal/watch">
-            <div class="watch-filter-group">
-                <label class="watch-filter-label">关键词</label>
-                <input type="text" name="keyword" class="watch-filter-input" placeholder="搜索关键词或标题" value="{{ keyword }}" />
-            </div>
-            <div class="watch-filter-group">
-                <label class="watch-filter-label">数据源</label>
-                <select name="source_id" class="watch-filter-select">
-                    <option value="">全部来源</option>
-                    {% for source in sources %}
-                    <option value="{{ source['id'] }}" {% if source_id and int(source_id) == source['id'] %}selected{% end %}>{{ source['name'] }}</option>
-                    {% end %}
-                </select>
-            </div>
-            <div class="watch-filter-group watch-filter-actions">
-                <button type="submit" class="watch-filter-btn"><i class="fas fa-search"></i> 筛选</button>
-                {% if keyword or source_id %}
-                <a href="/portal/watch" class="watch-filter-btn watch-filter-btn-reset"><i class="fas fa-times"></i> 重置</a>
+<div class="glass-strong watch-filter-bar">
+    <form class="watch-filter-form" method="get" action="/portal/watch">
+        <div class="watch-filter-group">
+            <label class="watch-filter-label">关键词</label>
+            <input type="text" name="keyword" class="form-control watch-filter-input" placeholder="搜索关键词或标题" value="{{ keyword }}" />
+        </div>
+        <div class="watch-filter-group">
+            <label class="watch-filter-label">数据源</label>
+            <select name="source_id" class="form-select watch-filter-select">
+                <option value="">全部来源</option>
+                {% for source in sources %}
+                <option value="{{ source['id'] }}" {% if source_id and int(source_id) == source['id'] %}selected{% end %}>{{ source['name'] }}</option>
                 {% end %}
-            </div>
-        </form>
-    </div>
-
-    <!-- 数据列表 -->
-    {% if records %}
-    <div class="watch-records-list">
-        {% for record in records %}
-        <div class="watch-record-card">
-            <div class="watch-record-header">
-                <span class="watch-record-source">{{ record['source_name'] }}</span>
-                <span class="watch-record-time">{{ record['created_at'] }}</span>
-            </div>
-            <h3 class="watch-record-title">{{ record['title'] }}</h3>
-            <div class="watch-record-meta">
-                <span class="watch-record-keyword"><i class="fas fa-tag"></i> {{ record['keyword'] }}</span>
-                {% if record['url'] %}
-                <a href="{{ record['url'] }}" target="_self" class="watch-record-link"><i class="fas fa-external-link-alt"></i> 原文链接</a>
-                {% end %}
-            </div>
+            </select>
         </div>
-        {% end %}
-    </div>
-
-    <!-- 分页 -->
-    <nav class="watch-pagination">
-        <ul class="watch-page-list">
-            {% if has_prev %}
-            <li class="watch-page-item">
-                <a href="/portal/watch?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">
-                    <i class="fas fa-chevron-left"></i> 上一页
-                </a>
-            </li>
-            {% else %}
-            <li class="watch-page-item disabled"><span><i class="fas fa-chevron-left"></i> 上一页</span></li>
+        <div class="watch-filter-group watch-filter-actions">
+            <button type="submit" class="btn btn-primary watch-filter-btn"><i class="fas fa-search me-2"></i>筛选</button>
+            {% if keyword or source_id %}
+            <a href="/portal/watch" class="btn btn-outline-secondary watch-filter-btn-reset"><i class="fas fa-times me-2"></i>重置</a>
             {% end %}
+        </div>
+    </form>
+</div>
 
-            <li class="watch-page-item active">
-                <span>第 {{ page }} / {{ total_pages }} 页</span>
-            </li>
-
-            {% if has_next %}
-            <li class="watch-page-item">
-                <a href="/portal/watch?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">
-                    下一页 <i class="fas fa-chevron-right"></i>
-                </a>
-            </li>
-            {% else %}
-            <li class="watch-page-item disabled"><span>下一页 <i class="fas fa-chevron-right"></i></span></li>
-            {% end %}
-        </ul>
-    </nav>
-    {% else %}
-    <div class="watch-empty-state">
-        <i class="fas fa-inbox"></i>
-        <h3>暂无瞭望数据</h3>
-        <p>管理员采集数据后，这里将展示相关内容</p>
-    </div>
+{% if records %}
+<div class="watch-records-list">
+    {% for record in records %}
+    <a href="/portal/watch/{{ record['id'] }}" class="watch-record-card glass-strong">
+        <div class="watch-record-header">
+            <span class="watch-record-source">{{ record['source_name'] }}</span>
+            <span class="watch-record-time">{{ record['created_at'] }}</span>
+        </div>
+        <h3 class="watch-record-title">{{ record['title'] }}</h3>
+        <div class="watch-record-meta">
+            <span class="watch-record-keyword"><i class="fas fa-tag"></i> {{ record['keyword'] }}</span>
+            <span class="watch-record-link">查看详情 <i class="fas fa-arrow-right"></i></span>
+        </div>
+    </a>
     {% end %}
 </div>
+
+<nav class="watch-pagination">
+    <ul class="watch-page-list">
+        {% if has_prev %}
+        <li class="watch-page-item">
+            <a href="/portal/watch?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">
+                <i class="fas fa-chevron-left"></i> 上一页
+            </a>
+        </li>
+        {% else %}
+        <li class="watch-page-item disabled"><span><i class="fas fa-chevron-left"></i> 上一页</span></li>
+        {% end %}
+
+        <li class="watch-page-item active">
+            <span>第 {{ page }} / {{ total_pages }} 页</span>
+        </li>
+
+        {% if has_next %}
+        <li class="watch-page-item">
+            <a href="/portal/watch?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">
+                下一页 <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        {% else %}
+        <li class="watch-page-item disabled"><span>下一页 <i class="fas fa-chevron-right"></i></span></li>
+        {% end %}
+    </ul>
+</nav>
+{% else %}
+<div class="glass-strong watch-empty-state">
+    <i class="fas fa-inbox"></i>
+    <h3>暂无瞭望数据</h3>
+    <p>管理员采集数据后，这里将展示相关内容</p>
+</div>
+{% end %}
 {% end %}

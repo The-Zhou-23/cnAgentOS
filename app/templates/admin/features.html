@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{{ title }} - cnAgentOS</title>
     <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
 </head>
 <body class="admin-shell">
@@ -16,54 +15,115 @@
     <main class="main">
         <div class="topbar">
             <div>
-                <h1 class="title-large">功能管理</h1>
-                <div class="subtitle">管理菜单项的显示、排序与启用状态</div>
+                <h1 class="title-large">功能菜单</h1>
+                <div class="subtitle">「排序」数值越小越靠前，侧栏与下表顺序一致；修改后刷新页面即可生效（重启服务不会重置排序）</div>
             </div>
-            <div class="badge-soft"><i class="fas fa-th-large me-2"></i>菜单功能配置</div>
+            <div class="badge-soft"><i class="fas fa-th-large me-2"></i>共 {{ len(features) }} 项</div>
         </div>
 
-        <div class="glass-strong card-soft">
+        {% for group, items in feature_group_list %}
+        <div class="glass-strong card-soft mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0"><i class="fas fa-list me-2 text-primary"></i>{{ group }}</h2>
+                <span class="badge-soft">{{ len(items) }} 项</span>
+            </div>
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead>
-                        <tr><th>ID</th><th>菜单分组</th><th>名称</th><th>编码</th><th>路由路径</th><th>排序</th><th>状态</th><th style="width:200px;">操作</th></tr>
+                        <tr>
+                            <th>ID</th><th>名称</th><th>权限码</th><th>路由</th><th>排序</th><th>状态</th>
+                            {% if current_role_code == 'super_admin' %}<th style="width:220px;">操作</th>{% end %}
+                        </tr>
                     </thead>
                     <tbody>
-                    {% for f in features %}
+                    {% for f in items %}
                     <tr>
                         <td class="text-secondary">#{{ f['id'] }}</td>
-                        <td><span class="badge-soft">{{ f['menu_group'] }}</span></td>
-                        <td class="fw-semibold">{{ f['name'] }}</td>
-                        <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ f['code'] }}</span></td>
-                        <td><span class="text-secondary">{{ f['route_path'] }}</span></td>
+                        <td class="fw-semibold"><i class="{{ f['icon'] }} me-2 text-primary"></i>{{ f['name'] }}</td>
+                        <td><code>{{ f['permission_code'] }}</code></td>
+                        <td class="text-secondary">{{ f['route_path'] }}</td>
                         <td>{{ f['sort_no'] }}</td>
                         <td>
                             {% if f['is_enabled'] %}
-                            <span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-check-circle me-1"></i>启用</span>
+                            <span class="badge bg-success bg-opacity-10 text-success">启用</span>
                             {% else %}
-                            <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fas fa-ban me-1"></i>禁用</span>
+                            <span class="badge bg-danger bg-opacity-10 text-danger">禁用</span>
                             {% end %}
                         </td>
+                        {% if current_role_code == 'super_admin' %}
                         <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-edit-feature"
+                                data-id="{{ f['id'] }}"
+                                data-name="{{ f['name'] }}"
+                                data-menu-group="{{ f['menu_group'] }}"
+                                data-route-path="{{ f['route_path'] }}"
+                                data-sort-no="{{ f['sort_no'] }}"
+                                data-is-enabled="{{ f['is_enabled'] }}">编辑</button>
                             <form action="/admin/features/update/{{ f['id'] }}" method="post" class="d-inline">
                                 {% module xsrf_form_html() %}
+                                <input type="hidden" name="action" value="toggle">
                                 <input type="hidden" name="name" value="{{ f['name'] }}">
+                                <input type="hidden" name="menu_group" value="{{ f['menu_group'] }}">
                                 <input type="hidden" name="route_path" value="{{ f['route_path'] }}">
                                 <input type="hidden" name="sort_no" value="{{ f['sort_no'] }}">
                                 <input type="hidden" name="is_enabled" value="{{ 0 if f['is_enabled'] else 1 }}">
-                                <button class="btn btn-sm {% if f['is_enabled'] %}btn-outline-warning{% else %}btn-outline-success{% end %}">
+                                <button class="btn btn-sm {% if f['is_enabled'] %}btn-outline-warning{% else %}btn-outline-success{% end %}" type="submit">
                                     {% if f['is_enabled'] %}禁用{% else %}启用{% end %}
                                 </button>
                             </form>
                         </td>
+                        {% end %}
                     </tr>
                     {% end %}
                     </tbody>
                 </table>
             </div>
         </div>
+        {% end %}
     </main>
 </div>
-<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+
+{% if current_role_code == 'super_admin' %}
+<div class="modal fade" id="editFeatureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="editFeatureForm" method="post">
+            {% module xsrf_form_html() %}
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" name="is_enabled" id="editFeatureEnabled" value="1">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑功能菜单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-12"><label class="form-label">显示名称</label><input class="form-control" name="name" id="editFeatureName" required></div>
+                <div class="col-12"><label class="form-label">菜单组</label><input class="form-control" name="menu_group" id="editFeatureGroup" required></div>
+                <div class="col-12"><label class="form-label">路由路径</label><input class="form-control" name="route_path" id="editFeatureRoute" required></div>
+                <div class="col-12"><label class="form-label">排序</label><input class="form-control" type="number" name="sort_no" id="editFeatureSort" required></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="{{ static_url('dist/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+document.querySelectorAll('.btn-edit-feature').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const form = document.getElementById('editFeatureForm');
+        form.action = '/admin/features/update/' + btn.dataset.id;
+        document.getElementById('editFeatureName').value = btn.dataset.name;
+        document.getElementById('editFeatureGroup').value = btn.dataset.menuGroup;
+        document.getElementById('editFeatureRoute').value = btn.dataset.routePath;
+        document.getElementById('editFeatureSort').value = btn.dataset.sortNo;
+        document.getElementById('editFeatureEnabled').value = btn.dataset.isEnabled;
+        new bootstrap.Modal(document.getElementById('editFeatureModal')).show();
+    });
+});
+</script>
+{% else %}
+<script src="{{ static_url('dist/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js') }}"></script>
+{% end %}
 </body>
 </html>

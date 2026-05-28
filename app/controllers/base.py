@@ -6,17 +6,30 @@
 
 本程序可以提供一个统一的基础类，用于处理一些公共业务,如登录态的处理或获得逻辑，供其他Handler继承使用
 """
-import functools
 import tornado.web
 
 from app.models.user import UserRepository
 from app.models.rbac import RBACRepository
+from app.models.feature import FeatureRepository
+
+# 不绑定功能菜单的后台子路由，继承父模块权限
+ADMIN_ROUTE_PERMISSION_FALLBACK = {
+    "/admin/users/create": "system.user",
+    "/admin/users/batch-delete": "system.user",
+    "/admin/roles/create": "system.role",
+    "/admin/roles/permissions": "system.role",
+    "/admin/permissions/create": "system.permission",
+    "/admin/features/update": "system.feature",
+    "/admin/watch-collect": "system.watch",
+    "/admin/watch-records/batch-delete": "system.watch_record",
+    "/admin/chat/groups": "system.chat_group",
+    "/admin/chat/files": "system.chat_file",
+    "/admin/chat/servers": "system.chat_server",
+    "/admin/tools": "system.ai_tool",
+}
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    # 公共类的用户态认证机制：
-    # - 框架会通过 xxxx() 的返回值来判断是否"已经登录"
-    # - 如果返回None 则 @tornado.web.authenticated 触发跳转到指定的路由url: login
     def get_current_user(self):
         username = self.get_secure_cookie("username")
         if not username:
@@ -40,13 +53,18 @@ class BaseHandler(tornado.web.RequestHandler):
             return "普通用户"
         return "用户"
 
+    def _get_admin_context(self):
+        user = self.get_current_user_record()
+        if not user:
+            return None, "", []
+        role_code = UserRepository.get_role_code(user)
+        sidebar_features = FeatureRepository.list_sidebar_features(user["role_id"], role_code)
+        return user, role_code, sidebar_features
+
     def render(self, template_name, **kwargs):
-        # 门户模板（portal_base.html）可选变量默认值，避免未传参时 NameError
         kwargs.setdefault("portal_message", None)
         kwargs.setdefault("portal_message_type", None)
         kwargs.setdefault("active_nav", "")
-        # 管理侧侧栏（admin/_sidebar.html）依赖 current_role_code 做角色级菜单显隐，
-        # 默认按当前登录用户解析；未登录或解析失败时给空字符串，模板侧用 truthy 判定即可。
         if "current_role_code" not in kwargs:
             try:
                 user = self.get_current_user_record()
@@ -58,18 +76,48 @@ class BaseHandler(tornado.web.RequestHandler):
         kwargs.setdefault("active_page", "")
         if "role_name" not in kwargs and self.get_current_user():
             kwargs.setdefault("role_name", self.get_current_role_name())
+        if template_name.startswith("admin/") and "sidebar_features" not in kwargs:
+            _, _, sidebar_features = self._get_admin_context()
+            kwargs.setdefault("sidebar_features", sidebar_features)
         super().render(template_name, **kwargs)
 
 
 class AdminBaseHandler(BaseHandler):
-	def prepare(self):
-		if self.request.path.rstrip("/") == "/admin/login":
-			return
-		username = self.get_current_user()
-		if not username:
-			return
-		user = UserRepository.get_user_by_username(username)
-		role_code = UserRepository.get_role_code(user)
-		if not UserRepository.is_admin_role(role_code):
-			self.redirect("/")
-			self.finish()
+    def _resolve_required_permission(self, path: str) -> str | None:
+        path = path.rstrip("/") or "/"
+        perm = FeatureRepository.get_permission_code_for_route(path)
+        if perm:
+            return perm
+        for prefix, code in ADMIN_ROUTE_PERMISSION_FALLBACK.items():
+            if path == prefix or path.startswith(prefix + "/"):
+                return code
+        return None
+
+    def prepare(self):
+        if self.request.path.rstrip("/") == "/admin/login":
+            return
+        username = self.get_current_user()
+        if not username:
+            return
+        user = UserRepository.get_user_by_username(username)
+        if not user:
+            return
+        role_code = UserRepository.get_role_code(user)
+        if not UserRepository.is_admin_role(role_code):
+            self.redirect("/")
+            raise tornado.web.Finish()
+
+        if role_code == "super_admin":
+            return
+
+        path = self.request.path.split("?")[0].rstrip("/") or "/"
+        required = self._resolve_required_permission(path)
+        if required and not RBACRepository.role_has_permission(user["role_id"], role_code, required):
+            self.set_status(403)
+            self.render(
+                "admin/forbidden.html",
+                title="无访问权限",
+                username=username,
+                required_permission=required,
+            )
+            raise tornado.web.Finish()
