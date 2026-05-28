@@ -1,6 +1,7 @@
 import json
 import re
 import sqlite3
+import time
 from html import unescape
 from urllib.parse import quote, urljoin
 from urllib.request import Request, urlopen
@@ -147,7 +148,8 @@ class WatchtowerRepository:
         return url
 
     @staticmethod
-    def _fetch_html(url: str, headers_json: str = "{}"):
+    def _fetch_html(url: str, headers_json: str = "{}"): 
+
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -161,7 +163,10 @@ class WatchtowerRepository:
             pass
         req = Request(url, headers=headers)
         with urlopen(req, timeout=30) as resp:
-            return resp.read().decode("utf-8", errors="ignore")
+            html = resp.read().decode("utf-8", errors="ignore")
+        if "百度安全验证" in html or "安全验证" in html:
+            raise RuntimeError("百度安全验证拦截，无法获取新闻页")
+        return html
 
     @staticmethod
     def _parse_items(html: str, source):
@@ -224,7 +229,7 @@ class WatchtowerRepository:
             return result is not None
 
     @staticmethod
-    def collect(source_id: int, keyword: str, start_page: int, item_count: int, incremental=True, user_name: str | None = None):
+    def collect(source_id: int, keyword: str, start_page: int, item_count: int, incremental=True, user_name: str | None = None, delay_seconds: float = 1.0):
         """
         采集数据
         :param incremental: 是否启用增量采集（跳过已存在的URL）
@@ -245,7 +250,6 @@ class WatchtowerRepository:
             if incremental and WatchtowerRepository.is_url_exists(item["url"], user_name=user_name):
                 skipped += 1
                 continue
-                
             rows.append(
                 {
                     "user_name": user_name or source.get("user_name", "") or "",
@@ -257,6 +261,8 @@ class WatchtowerRepository:
                     "url": item["url"],
                 }
             )
+            if delay_seconds and delay_seconds > 0:
+                time.sleep(delay_seconds)
         
         return {"records": rows, "skipped": skipped}
 

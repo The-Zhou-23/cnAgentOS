@@ -190,30 +190,39 @@ class PortalWatchCollectHandler(BaseHandler):
         total_saved = 0
         records_buffer = []
         page_step = int(baidu.get("page_step", 10) or 10)
-        max_rounds = max(1, (count + page_step - 1) // page_step + 3)
+        max_rounds = max(8, (count + page_step - 1) // page_step + 8)
         round_idx = 0
         current_start = start
         while total_saved < count and round_idx < max_rounds:
-            result = WatchtowerRepository.collect(
-                source_id=baidu["id"],
-                keyword=keyword,
-                start_page=current_start,
-                item_count=min(page_step, count - total_saved),
-                user_name=self.current_user,
-            )
+            try:
+                result = WatchtowerRepository.collect(
+                    source_id=baidu["id"],
+                    keyword=keyword,
+                    start_page=current_start,
+                    item_count=min(page_step, count - total_saved),
+                    user_name=self.current_user,
+                )
+            except Exception as exc:
+                send(f"采集被拦截或失败：{exc}")
+                break
             records = result.get("records", [])
             saved = WatchtowerRepository.save_records(records)
             total_saved += saved
             records_buffer.extend(records)
-            for item in records:
-                send(item["title"])
-                self.write(f"data: {json.dumps({'type': 'record', 'record': item}, ensure_ascii=False)}\n\n")
-                self.flush()
+            if records:
+                for item in records:
+                    send(item["title"])
+                    self.write(f"data: {json.dumps({'type': 'record', 'record': item}, ensure_ascii=False)}\n\n")
+                    self.flush()
+                current_start += page_step
+                round_idx += 1
+                continue
             current_start += page_step
             round_idx += 1
-            if not records:
-                break
-        send(f"采集结束，共新增 {total_saved} 条")
+        if total_saved < count:
+            send(f"当前关键词可用结果不足，实际新增 {total_saved} 条，目标 {count} 条")
+        else:
+            send(f"采集结束，共新增 {total_saved} 条")
         self.finish()
         self.finish()
 
