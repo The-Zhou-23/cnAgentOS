@@ -171,17 +171,20 @@ def init_db():
             """
         )
         _ensure_column(conn, "features", "updated_at", "updated_at TEXT")
-        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("用户管理", "feature.user_management", "系统管理", "/admin/users", 10, 1))
-        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("角色管理", "feature.role_management", "系统管理", "/admin/roles", 20, 1))
-        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("权限管理", "feature.permission_management", "系统管理", "/admin/permissions", 30, 1))
-        conn.execute("INSERT OR IGNORE INTO features(name, code, menu_group, route_path, sort_no, is_enabled) VALUES(?, ?, ?, ?, ?, ?)", ("功能管理", "feature.feature_management", "系统管理", "/admin/features", 40, 1))
+        _ensure_column(conn, "features", "permission_code", "permission_code TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "features", "icon", "icon TEXT NOT NULL DEFAULT 'fas fa-circle'")
+        _ensure_column(conn, "features", "active_page", "active_page TEXT NOT NULL DEFAULT ''")
+
+        from app.models.rbac import RBACRepository
+        from app.models.feature import FeatureRepository
+
+        RBACRepository.ensure_default_permissions()
+        FeatureRepository.ensure_defaults()
+        RBACRepository.ensure_default_role_permissions()
 
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 1)", ("超级管理员", "super_admin"))
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 0)", ("普通管理员", "normal_admin"))
         conn.execute("INSERT OR IGNORE INTO roles(name, code, is_system) VALUES(?, ?, 0)", ("普通用户", "normal_user"))
-        conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "功能管理", "system.menu", 10))
-        conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "权限管理", "system.permission", 20))
-        conn.execute("INSERT OR IGNORE INTO permissions(menu_group, name, code, sort_no) VALUES(?, ?, ?, ?)", ("系统管理", "角色管理", "system.role", 30))
         conn.execute("INSERT OR IGNORE INTO api_interfaces(name, api_url, response_format, request_method, request_example, qps_limit, note) VALUES(?, ?, ?, ?, ?, ?, ?)", ("音乐 API", "https://api.52vmy.cn/api/music/wy/rand", "JSON", "GET", "https://api.52vmy.cn/api/music/wy/rand", "每2秒最多4次，携带Token可无视限制", ""))
         conn.execute("INSERT OR IGNORE INTO api_interfaces(name, api_url, response_format, request_method, request_example, qps_limit, note) VALUES(?, ?, ?, ?, ?, ?, ?)", ("天气 API", "https://api.52vmy.cn/api/query/tian", "JSON", "GET", "https://api.52vmy.cn/api/query/tian?city=北京市", "每2秒最多4次，携带Token可无视限制", "点击前往三日天气 API"))
         conn.execute("UPDATE users SET role_id = (SELECT id FROM roles WHERE code = 'super_admin') WHERE username = 'admin'")

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - cnAgentOS</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
+</head>
+<body class="admin-shell">
+<div class="page-shell">
+    {% include "_sidebar.html" %}
+    <main class="main">
+        <div class="glass-strong card-soft text-center py-5">
+            <i class="fas fa-lock fa-3x text-danger mb-3"></i>
+            <h1 class="title-large">无访问权限</h1>
+            <p class="subtitle mb-4">当前账号缺少访问该模块的权限{% if required_permission %}（{{ required_permission }}）{% end %}</p>
+            <a href="/admin/users" class="btn btn-primary">返回后台首页</a>
+        </div>
+    </main>
+</div>
+</body>
+</html>

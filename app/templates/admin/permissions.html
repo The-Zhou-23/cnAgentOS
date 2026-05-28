@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{{ title }} - cnAgentOS</title>
     <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ static_url('dist/layui-v2.13.6/css/layui.css') }}">
     <link rel="stylesheet" href="{{ static_url('css/admin.css') }}">
 </head>
 <body class="admin-shell">
@@ -17,49 +16,53 @@
         <div class="topbar">
             <div>
                 <h1 class="title-large">权限管理</h1>
-                <div class="subtitle">管理菜单、按钮等权限项，按菜单分组展示</div>
+                <div class="subtitle">维护后台模块访问权限码，并在角色管理中分配给不同角色</div>
             </div>
-            <div class="badge-soft"><i class="fas fa-sitemap me-2"></i>权限项管理</div>
+            <div class="badge-soft"><i class="fas fa-sitemap me-2"></i>共 {{ len(permissions) }} 项</div>
         </div>
 
         {% if current_role_code == 'super_admin' %}
         <div class="glass-strong card-soft mb-4">
             <form action="/admin/permissions/create" method="post" class="row g-3 align-items-end">
                 {% module xsrf_form_html() %}
-                <div class="col-md-3"><label class="form-label fw-semibold">菜单组</label><input class="form-control" name="menu_group" placeholder="如：系统管理"></div>
-                <div class="col-md-3"><label class="form-label fw-semibold">名称</label><input class="form-control" name="name" placeholder="如：用户管理"></div>
-                <div class="col-md-3"><label class="form-label fw-semibold">编码</label><input class="form-control" name="code" placeholder="如：system.user"></div>
+                <div class="col-md-3"><label class="form-label fw-semibold">菜单组</label><input class="form-control" name="menu_group" placeholder="如：系统管理" required></div>
+                <div class="col-md-3"><label class="form-label fw-semibold">名称</label><input class="form-control" name="name" placeholder="如：用户管理" required></div>
+                <div class="col-md-3"><label class="form-label fw-semibold">编码</label><input class="form-control" name="code" placeholder="如：system.user" required></div>
                 <div class="col-md-2"><label class="form-label fw-semibold">排序</label><input class="form-control" type="number" name="sort_no" value="0"></div>
-                <div class="col-md-1 d-grid"><button class="btn btn-primary"><i class="fas fa-plus"></i></button></div>
+                <div class="col-md-1 d-grid"><button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i></button></div>
             </form>
         </div>
         {% end %}
 
-        <div class="glass-strong card-soft">
+        {% for group, items in permission_group_list %}
+        <div class="glass-strong card-soft mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0"><i class="fas fa-folder-open me-2 text-primary"></i>{{ group }}</h2>
+                <span class="badge-soft">{{ len(items) }} 项</span>
+            </div>
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
-                    <thead><tr><th>ID</th><th>菜单组</th><th>名称</th><th>编码</th><th>排序</th>{% if current_role_code == 'super_admin' %}<th style="width:160px;">操作</th>{% end %}</tr></thead>
+                    <thead>
+                        <tr><th>ID</th><th>名称</th><th>权限编码</th><th>排序</th>{% if current_role_code == 'super_admin' %}<th style="width:180px;">操作</th>{% end %}</tr>
+                    </thead>
                     <tbody>
-                    {% for p in permissions %}
+                    {% for p in items %}
                     <tr>
                         <td class="text-secondary">#{{ p['id'] }}</td>
-                        <td><span class="badge-soft">{{ p['menu_group'] }}</span></td>
                         <td class="fw-semibold">{{ p['name'] }}</td>
-                        <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ p['code'] }}</span></td>
+                        <td><code>{{ p['code'] }}</code></td>
                         <td>{{ p['sort_no'] }}</td>
                         {% if current_role_code == 'super_admin' %}
                         <td>
-                            <form action="/admin/permissions/update/{{ p['id'] }}" method="post" class="d-inline">
+                            <button type="button" class="btn btn-sm btn-outline-secondary btn-edit-perm"
+                                data-id="{{ p['id'] }}"
+                                data-menu-group="{{ p['menu_group'] }}"
+                                data-name="{{ p['name'] }}"
+                                data-code="{{ p['code'] }}"
+                                data-sort-no="{{ p['sort_no'] }}">编辑</button>
+                            <form action="/admin/permissions/delete/{{ p['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除该权限？关联角色授权将一并移除')">
                                 {% module xsrf_form_html() %}
-                                <input type="hidden" name="menu_group" value="{{ p['menu_group'] }}">
-                                <input type="hidden" name="name" value="{{ p['name'] }}">
-                                <input type="hidden" name="code" value="{{ p['code'] }}">
-                                <input type="hidden" name="sort_no" value="{{ p['sort_no'] }}">
-                                <button class="btn btn-sm btn-outline-secondary">编辑</button>
-                            </form>
-                            <form action="/admin/permissions/delete/{{ p['id'] }}" method="post" class="d-inline" onsubmit="return confirm('确认删除权限？')">
-                                {% module xsrf_form_html() %}
-                                <button class="btn btn-sm btn-outline-danger">删除</button>
+                                <button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
                             </form>
                         </td>
                         {% end %}
@@ -69,8 +72,47 @@
                 </table>
             </div>
         </div>
+        {% end %}
     </main>
 </div>
-<script src="{{ static_url('dist/layui-v2.13.6/layui.js') }}"></script>
+
+{% if current_role_code == 'super_admin' %}
+<div class="modal fade" id="editPermModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="editPermForm" method="post">
+            {% module xsrf_form_html() %}
+            <div class="modal-header">
+                <h5 class="modal-title">编辑权限</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-12"><label class="form-label">菜单组</label><input class="form-control" name="menu_group" id="editPermGroup" required></div>
+                <div class="col-12"><label class="form-label">名称</label><input class="form-control" name="name" id="editPermName" required></div>
+                <div class="col-12"><label class="form-label">编码</label><input class="form-control" name="code" id="editPermCode" required></div>
+                <div class="col-12"><label class="form-label">排序</label><input class="form-control" type="number" name="sort_no" id="editPermSort" required></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% end %}
+
+<script src="{{ static_url('dist/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+document.querySelectorAll('.btn-edit-perm').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const form = document.getElementById('editPermForm');
+        form.action = '/admin/permissions/update/' + btn.dataset.id;
+        document.getElementById('editPermGroup').value = btn.dataset.menuGroup;
+        document.getElementById('editPermName').value = btn.dataset.name;
+        document.getElementById('editPermCode').value = btn.dataset.code;
+        document.getElementById('editPermSort').value = btn.dataset.sortNo;
+        new bootstrap.Modal(document.getElementById('editPermModal')).show();
+    });
+});
+</script>
 </body>
 </html>
