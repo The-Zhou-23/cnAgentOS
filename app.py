@@ -86,7 +86,14 @@ from app.controllers.admin_chat import (
     AdminChatServersHandler,
 )
 from app.controllers.admin_tools import AdminToolsHandler
-from app.models.db import get_connection, init_db
+from app.controllers.admin_database import (
+    AdminDatabaseSettingsHandler,
+    AdminDatabaseTestHandler,
+    AdminDatabaseSaveHandler,
+    AdminDatabaseMigrateHandler,
+)
+from app.models.database import get_connection
+from app.models.db import init_db
 from app.models.model_service import ModelServiceRepository
 from app.models.digital_employee import DigitalEmployeeRepository
 from app.models.user import UserRepository
@@ -190,6 +197,11 @@ def make_app():
             (r"/admin/watch-records/batch-delete", AdminWatchRecordBatchDeleteHandler),
             (r"/admin/features", AdminFeatureListHandler),
             (r"/admin/features/update/(\d+)", AdminFeatureUpdateHandler),
+            # 成员 C：数据库配置（任务五）
+            (r"/admin/database", AdminDatabaseSettingsHandler),
+            (r"/admin/database/test", AdminDatabaseTestHandler),
+            (r"/admin/database/save", AdminDatabaseSaveHandler),
+            (r"/admin/database/migrate", AdminDatabaseMigrateHandler),
         ],
         **settings,
     )
