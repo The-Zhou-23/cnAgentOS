@@ -1,98 +1,183 @@
 {% extends "../portal_base.html" %}
 
 {% block portal_content %}
-<div class="portal-page-head">
-    <div class="kicker"><i class="fas fa-binoculars me-2"></i>智能瞭望</div>
-    <h1 class="title-large">数据瞭望浏览</h1>
-    <p class="subtitle">浏览已采集的数据瞭望内容，掌握关键动态与资讯信息</p>
+<style>
+.watch-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 32px;
+    background: linear-gradient(135deg, rgba(10, 15, 35, 0.92), rgba(16, 185, 129, 0.18)), radial-gradient(circle at top right, rgba(56,189,248,.22), transparent 28%);
+    color: #fff;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, .28);
+}
+.watch-hero h1 { font-size: 42px; font-weight: 800; margin: 8px 0 10px; }
+.watch-hero p { color: rgba(255,255,255,.72); max-width: 780px; }
+.watch-shell { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 22px; }
+.watch-panel, .vault-panel { width: 100%; border-radius: 24px; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border: 1px solid rgba(148,163,184,.18); box-shadow: 0 18px 60px rgba(15,23,42,.08); }
+.watch-panel { padding: 24px; }
+.vault-panel { padding: 24px; }
+.watch-input { width: 100%; min-height: 120px; border-radius: 20px; border: 1px solid #e5e7eb; padding: 18px 20px; font-size: 18px; outline: none; background: #0f172a; color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.watch-input::placeholder { color: rgba(255,255,255,.4); }
+.watch-toggle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+.toggle-chip { position: relative; border-radius: 22px; padding: 20px 22px; border: 1px solid #dbe4ee; background: linear-gradient(180deg, #ffffff, #f8fbff); display:flex; justify-content:space-between; align-items:center; gap:16px; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; cursor: pointer; min-height: 92px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
+.toggle-chip:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(15,23,42,.10); }
+.toggle-chip input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: #10b981; }
+.toggle-chip strong { font-size: 18px; line-height: 1.2; }
+.toggle-chip small { display:inline-block; margin-top: 6px; font-size: 13px; color:#64748b; line-height: 1.5; }
+.toggle-chip.active { border-color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,.12), 0 14px 36px rgba(15,23,42,.10); transform: translateY(-2px); }
+.toggle-chip .toggle-chip-icon { width: 44px; height: 44px; border-radius: 14px; display:flex; align-items:center; justify-content:center; background: rgba(16,185,129,.10); color:#059669; font-size: 18px; flex: 0 0 auto; }
+.watch-config { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+.config-card { border-radius: 18px; border: 1px solid #e5e7eb; padding: 14px; background: #f8fafc; }
+.config-card label { display:block; font-size: 12px; color:#64748b; margin-bottom: 6px; }
+.config-card input, .config-card select { width:100%; border:none; outline:none; background:transparent; font-size: 16px; font-weight: 700; color:#0f172a; }
+.watch-actions { display:flex; gap: 12px; flex-wrap:wrap; margin-top: 18px; }
+.btn-watch { border:none; border-radius: 16px; padding: 14px 20px; font-weight: 700; }
+.btn-watch-primary { background: linear-gradient(135deg, #22c55e, #06b6d4); color:#fff; box-shadow: 0 18px 30px rgba(6,182,212,.22); }
+.btn-watch-ghost { background:#e2e8f0; color:#0f172a; }
+.stream-box { margin-top: 18px; min-height: 220px; border-radius: 20px; background: #020617; color:#a7f3d0; padding: 16px 18px; white-space: pre-wrap; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid rgba(148,163,184,.16); }
+.vault-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom: 14px; flex-wrap:wrap; }
+.vault-list { display:flex; flex-direction:column; gap:12px; }
+.vault-item { border:1px solid #e5e7eb; border-radius:18px; padding:14px 16px; background:#fff; }
+.vault-item h4 { font-size: 16px; margin: 8px 0; font-weight: 700; }
+.vault-meta { display:flex; gap:10px; flex-wrap:wrap; color:#64748b; font-size: 12px; }
+.tag { display:inline-flex; padding:4px 10px; border-radius:999px; background:#ecfeff; color:#0f766e; font-size:12px; }
+.pagination-mini { display:flex; gap:8px; margin-top: 16px; flex-wrap:wrap; }
+.pagination-mini a, .pagination-mini span { border-radius: 12px; padding: 10px 14px; background:#fff; border:1px solid #e5e7eb; color:#0f172a; text-decoration:none; }
+.pagination-mini .disabled { opacity:.45; pointer-events:none; }
+@media (max-width: 1100px) { .watch-shell { grid-template-columns: 1fr; } .watch-config { grid-template-columns: 1fr; } .watch-hero h1 { font-size: 32px; } }
+</style>
+
+<div class="watch-hero">
+  <div class="badge-soft mb-2">用户端智能瞭望</div>
+  <h1>搜索式智能采集中心</h1>
+  <p>输入一个关键词或一句话指令，选择采集源，设置采集数量和页数，系统会按当前账号独立采集并入库到 SQLite。下方是你的数据仓库，支持分页、删除和批量删除。</p>
 </div>
 
-<div class="glass-strong portal-welcome-card watch-portal-summary">
-    <div class="watch-stats">
-        <div class="watch-stat-item">
-            <span class="watch-stat-value">{{ total }}</span>
-            <span class="watch-stat-label">总记录</span>
-        </div>
-        <div class="watch-stat-item">
-            <span class="watch-stat-value">{{ len(sources) }}</span>
-            <span class="watch-stat-label">数据源</span>
-        </div>
-    </div>
-</div>
+<div class="watch-shell">
+  <div class="watch-panel">
+    <form id="watchForm">
+      {% module xsrf_form_html() %}
+      <textarea class="watch-input" name="prompt" placeholder="例如：帮我采集四川农业大学相关的10条新闻"></textarea>
+      <input type="hidden" name="area_name" id="areaNameInput" value="">
+      <input type="hidden" name="word" id="wordInput" value="">
+      <input type="hidden" name="region" id="regionInput" value="">
 
-<div class="glass-strong watch-filter-bar">
-    <form class="watch-filter-form" method="get" action="/portal/watch">
-        <div class="watch-filter-group">
-            <label class="watch-filter-label">关键词</label>
-            <input type="text" name="keyword" class="form-control watch-filter-input" placeholder="搜索关键词或标题" value="{{ keyword }}" />
+      <div style="margin-top:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>
+          <div class="badge-soft">默认源</div>
+          <h3 style="margin:8px 0 0; font-size:20px; font-weight:800; color:#fff;">百度新闻 / 地区新闻</h3>
         </div>
-        <div class="watch-filter-group">
-            <label class="watch-filter-label">数据源</label>
-            <select name="source_id" class="form-select watch-filter-select">
-                <option value="">全部来源</option>
-                {% for source in sources %}
-                <option value="{{ source['id'] }}" {% if source_id and int(source_id) == source['id'] %}selected{% end %}>{{ source['name'] }}</option>
-                {% end %}
-            </select>
+        <div class="tag">自动解析</div>
+      </div>
+      <div class="vault-item" style="margin-top:12px; background: rgba(255,255,255,.06); color:#fff; border-color: rgba(255,255,255,.14);">
+        <div class="vault-meta" style="color: rgba(255,255,255,.72);">
+          <span class="tag">{{ default_source['name'] if default_source else '百度新闻' }}</span>
+          <span>关键词占位：{关键词}</span>
+          <span>分页步进：10</span>
         </div>
-        <div class="watch-filter-group watch-filter-actions">
-            <button type="submit" class="btn btn-primary watch-filter-btn"><i class="fas fa-search me-2"></i>筛选</button>
-            {% if keyword or source_id %}
-            <a href="/portal/watch" class="btn btn-outline-secondary watch-filter-btn-reset"><i class="fas fa-times me-2"></i>重置</a>
-            {% end %}
+        <div style="margin-top:8px; color: rgba(255,255,255,.8); font-size:13px; line-height:1.6;">
+          默认流程：用户输入一句话 → 默认模型解析 JSON → 自动选择百度新闻或地区新闻 → 结果写入数据库仓库。
         </div>
+      </div>
+
+      <div class="watch-toggle-grid" id="sourceGrid">
+        {% if sources %}
+          {% for source in sources %}
+          <label class="toggle-chip {% if source['is_enabled'] %}active{% end %}">
+            <span style="display:flex; align-items:center; gap:14px; flex:1; min-width:0;">
+              <span class="toggle-chip-icon"><i class="fas fa-rss"></i></span>
+              <span style="min-width:0;">
+                <strong>{{ source['name'] }}</strong><br>
+                <small>{{ source['note'] }}</small>
+              </span>
+            </span>
+            <input type="checkbox" name="source_ids" value="{{ source['id'] }}" {% if source['is_enabled'] %}checked{% end %}>
+          </label>
+          {% end %}
+        {% else %}
+          <div class="vault-item" style="grid-column:1/-1;">
+            你还没有自定义采集源，系统会默认使用百度新闻、地区新闻和娱乐新闻采集。
+          </div>
+        {% end %}
+      </div>
+
+      <div style="margin-top:12px; font-size:12px; color: rgba(15,23,42,.72);">
+        采集源通过上面的复选框勾选/取消勾选后生效。
+      </div>
+
+      <div class="watch-actions">
+        <button type="submit" class="btn-watch btn-watch-primary">开始采集</button>
+        <button type="button" id="askBtn" class="btn-watch btn-watch-primary" style="background: linear-gradient(135deg, #2563eb, #7c3aed);">智能问数</button>
+        <button type="reset" class="btn-watch btn-watch-ghost">清空</button>
+      </div>
     </form>
+    <div id="streamBox" class="stream-box">等待输入...</div>
+  </div>
 </div>
 
-{% if records %}
-<div class="watch-records-list">
-    {% for record in records %}
-    <a href="/portal/watch/{{ record['id'] }}" class="watch-record-card glass-strong">
-        <div class="watch-record-header">
-            <span class="watch-record-source">{{ record['source_name'] }}</span>
-            <span class="watch-record-time">{{ record['created_at'] }}</span>
-        </div>
-        <h3 class="watch-record-title">{{ record['title'] }}</h3>
-        <div class="watch-record-meta">
-            <span class="watch-record-keyword"><i class="fas fa-tag"></i> {{ record['keyword'] }}</span>
-            <span class="watch-record-link">查看详情 <i class="fas fa-arrow-right"></i></span>
-        </div>
-    </a>
-    {% end %}
-</div>
+<script>
+const form = document.getElementById('watchForm');
+const streamBox = document.getElementById('streamBox');
+const sourceGrid = document.getElementById('sourceGrid');
+const askBtn = document.getElementById('askBtn');
+sourceGrid?.addEventListener('change', (e) => {
+  const label = e.target.closest('.toggle-chip');
+  if (label) label.classList.toggle('active', e.target.checked);
+});
+const areaNameInput = document.getElementById('areaNameInput');
+const wordInput = document.getElementById('wordInput');
+const regionInput = document.getElementById('regionInput');
 
-<nav class="watch-pagination">
-    <ul class="watch-page-list">
-        {% if has_prev %}
-        <li class="watch-page-item">
-            <a href="/portal/watch?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">
-                <i class="fas fa-chevron-left"></i> 上一页
-            </a>
-        </li>
-        {% else %}
-        <li class="watch-page-item disabled"><span><i class="fas fa-chevron-left"></i> 上一页</span></li>
-        {% end %}
+async function readStream(resp) {
+  if (!resp.ok || !resp.body) { streamBox.textContent += '请求失败'; return; }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop() || '';
+    for (const part of parts) {
+      const line = part.split('\n').find(x => x.startsWith('data: '));
+      if (!line) continue;
+      try {
+        const payload = JSON.parse(line.slice(6));
+        if (payload.message) streamBox.textContent += payload.message + '\n';
+      } catch (err) {}
+    }
+  }
+}
 
-        <li class="watch-page-item active">
-            <span>第 {{ page }} / {{ total_pages }} 页</span>
-        </li>
+form?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (areaNameInput) areaNameInput.value = '';
+  if (wordInput) wordInput.value = '';
+  if (regionInput) regionInput.value = '';
+  const checked = Array.from(document.querySelectorAll('input[name="source_ids"]:checked')).map(x => x.value);
+  if (!checked.length) {
+    const first = document.querySelector('input[name="source_ids"]');
+    if (first) first.checked = true;
+    if (first?.closest('.toggle-chip')) first.closest('.toggle-chip').classList.add('active');
+  }
+  streamBox.textContent = '开始采集...\n';
+  const resp = await fetch('/user/watch/collect', { method: 'POST', body: new FormData(form) });
+  await readStream(resp);
+});
 
-        {% if has_next %}
-        <li class="watch-page-item">
-            <a href="/portal/watch?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">
-                下一页 <i class="fas fa-chevron-right"></i>
-            </a>
-        </li>
-        {% else %}
-        <li class="watch-page-item disabled"><span>下一页 <i class="fas fa-chevron-right"></i></span></li>
-        {% end %}
-    </ul>
-</nav>
-{% else %}
-<div class="glass-strong watch-empty-state">
-    <i class="fas fa-inbox"></i>
-    <h3>暂无瞭望数据</h3>
-    <p>管理员采集数据后，这里将展示相关内容</p>
-</div>
-{% end %}
+askBtn?.addEventListener('click', async () => {
+  const question = prompt('请输入智能问数问题，例如：最近7天雅安新闻有多少条？');
+  if (!question) return;
+  streamBox.textContent = '开始问数...\n';
+  const fd = new FormData();
+  fd.append('_xsrf', document.querySelector('input[name="_xsrf"]')?.value || '');
+  fd.append('question', question);
+  const resp = await fetch('/user/watch/ask', { method: 'POST', body: fd });
+  const data = await resp.json().catch(() => null);
+  if (!data || !data.ok) { streamBox.textContent += (data?.error || '问数失败'); return; }
+  streamBox.textContent += `SQL:\n${data.sql}\n\n结果条数: ${data.rows.length}\n\n回答:\n${data.answer}\n`;
+});
+</script>
 {% end %}

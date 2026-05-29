@@ -1,8 +1,20 @@
 # 程序的主入口
 import os
+from pathlib import Path
+
 import tornado.ioloop
 import tornado.web
 from tornado.httpserver import HTTPServer
+
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+    print(f"[env] TIANAPI_AREA_NEWS_KEY loaded={bool(os.getenv('TIANAPI_AREA_NEWS_KEY', '').strip())}")
+    print(f"[env] JUHE_HUABIAN_KEY loaded={bool(os.getenv('JUHE_HUABIAN_KEY', '').strip())}")
 
 from app.controllers.admin import (
     AdminFeatureListHandler,
@@ -24,16 +36,6 @@ from app.controllers.admin import (
     AdminUserListHandler,
     AdminUserResetPasswordHandler,
     AdminUserUpdateHandler,
-)
-from app.controllers.admin_watch import (
-    AdminWatchCollectHandler,
-    AdminWatchRecordBatchDeleteHandler,
-    AdminWatchRecordDeleteHandler,
-    AdminWatchRecordListHandler,
-    AdminWatchSourceCreateHandler,
-    AdminWatchSourceDeleteHandler,
-    AdminWatchSourceListHandler,
-    AdminWatchSourceUpdateHandler,
 )
 # 成员 D 独占：模型 + 接口 + 数字员工
 from app.controllers.admin_ai import (
@@ -64,9 +66,9 @@ from app.controllers.auth import LoginHandler, LogoutHandler, RegisterHandler
 from app.controllers.home import IndexHandler
 from app.controllers._temp_a_portal_stubs import (
     TempPortalDigitalEmployeeHandler,
-    TempPortalQueryHandler,
 )
-from app.controllers.portal_watch import PortalWatchListHandler, PortalWatchDetailHandler
+from app.controllers.portal_query import PortalQueryAskHandler, PortalQueryHandler
+from app.controllers.portal_watch import PortalWatchBatchDeleteHandler, PortalWatchCollectHandler, PortalWatchDatabaseHandler, PortalWatchDeleteHandler, PortalWatchListHandler
 from app.controllers.portal_chat import (
     PortalChatApiHandler,
     PortalChatFileHandler,
@@ -140,11 +142,15 @@ def make_app():
             (r"/auth/login", LoginHandler),
             (r"/auth/register", RegisterHandler),
             (r"/auth/logout", LogoutHandler),
-            # 【临时路由 - 成员 A】待 D/E 实现正式页面后删除
-            (r"/portal/query", TempPortalQueryHandler),
+            # 成员 E：智能问数路由
+            (r"/portal/query", PortalQueryHandler),
+            (r"/portal/query/ask", PortalQueryAskHandler),
             # 成员 C：智能瞭望用户侧路由
-            (r"/portal/watch", PortalWatchListHandler),
-            (r"/portal/watch/(\d+)", PortalWatchDetailHandler),
+            (r"/user/watch", PortalWatchListHandler),
+            (r"/user/watch/database", PortalWatchDatabaseHandler),
+            (r"/user/watch/collect", PortalWatchCollectHandler),
+            (r"/user/watch/delete/(\d+)", PortalWatchDeleteHandler),
+            (r"/user/watch/batch-delete", PortalWatchBatchDeleteHandler),
             (r"/admin/login", AdminLoginHandler),
             (r"/admin/logout", AdminLogoutHandler),
             (r"/admin/users", AdminUserListHandler),
@@ -197,14 +203,6 @@ def make_app():
             (r"/admin/chat/files", AdminChatFilesHandler),
             (r"/admin/chat/servers", AdminChatServersHandler),
             (r"/admin/tools", AdminToolsHandler),
-            (r"/admin/watch-sources", AdminWatchSourceListHandler),
-            (r"/admin/watch-sources/create", AdminWatchSourceCreateHandler),
-            (r"/admin/watch-sources/update/(\d+)", AdminWatchSourceUpdateHandler),
-            (r"/admin/watch-sources/delete/(\d+)", AdminWatchSourceDeleteHandler),
-            (r"/admin/watch-collect", AdminWatchCollectHandler),
-            (r"/admin/watch-records", AdminWatchRecordListHandler),
-            (r"/admin/watch-records/delete/(\d+)", AdminWatchRecordDeleteHandler),
-            (r"/admin/watch-records/batch-delete", AdminWatchRecordBatchDeleteHandler),
             (r"/admin/features", AdminFeatureListHandler),
             (r"/admin/features/update/(\d+)", AdminFeatureUpdateHandler),
             (r"/admin/automation", AdminAutomationListHandler),
