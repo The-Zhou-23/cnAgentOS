@@ -35,10 +35,10 @@
   <div class="db-toolbar">
     <form class="db-filter" method="get" action="/user/watch/database">
       <input type="text" name="keyword" placeholder="按关键词筛选" value="{{ keyword }}">
-      <select name="source_id">
+      <select name="source_name">
         <option value="">全部来源</option>
         {% for source in sources %}
-        <option value="{{ source['id'] }}" {% if source_id and int(source_id) == source['id'] %}selected{% end %}>{{ source['name'] }}</option>
+        <option value="{{ source['name'] }}" {% if source_name and source_name == source['name'] %}selected{% end %}>{{ source['name'] }}</option>
         {% end %}
       </select>
       <button class="btn btn-primary" type="submit">筛选</button>
@@ -85,9 +85,9 @@
   </form>
 
   <div class="db-pagination">
-    {% if has_prev %}<a href="/user/watch/database?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">上一页</a>{% else %}<span class="disabled">上一页</span>{% end %}
+    {% if has_prev %}<a href="/user/watch/database?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_name %}&source_name={{ source_name }}{% end %}">上一页</a>{% else %}<span class="disabled">上一页</span>{% end %}
     <span>第 {{ page }} / {{ total_pages }} 页</span>
-    {% if has_next %}<a href="/user/watch/database?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_id %}&source_id={{ source_id }}{% end %}">下一页</a>{% else %}<span class="disabled">下一页</span>{% end %}
+    {% if has_next %}<a href="/user/watch/database?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_name %}&source_name={{ source_name }}{% end %}">下一页</a>{% else %}<span class="disabled">下一页</span>{% end %}
   </div>
 </div>
 

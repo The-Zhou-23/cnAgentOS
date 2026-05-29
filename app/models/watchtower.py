@@ -436,7 +436,7 @@ class WatchtowerRepository:
         return int(total), rows
 
     @staticmethod
-    def list_records_filtered(page: int = 1, page_size: int = 20, keyword: str = None, source_id: int = None, user_name: str | None = None):
+    def list_records_filtered(page: int = 1, page_size: int = 20, keyword: str = None, source_name: str = None, user_name: str | None = None):
         """支持关键词和来源筛选的查询"""
         offset = (page - 1) * page_size
         conditions = []
@@ -444,9 +444,9 @@ class WatchtowerRepository:
         if keyword:
             conditions.append("(keyword LIKE ? OR title LIKE ?)")
             params.extend([f"%{keyword}%", f"%{keyword}%"])
-        if source_id:
-            conditions.append("source_id = ?")
-            params.append(source_id)
+        if source_name:
+            conditions.append("source_name = ?")
+            params.append(source_name)
         if user_name:
             conditions.append("user_name = ?")
             params.append(user_name)

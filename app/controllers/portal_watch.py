@@ -36,14 +36,14 @@ class PortalWatchDatabaseHandler(BaseHandler):
     def get(self):
         page = max(1, int(self.get_argument("page", 1)))
         keyword = (self.get_argument("keyword", "") or "").strip()
-        source_id = (self.get_argument("source_id", "") or "").strip()
+        source_name = (self.get_argument("source_name", "") or "").strip()
         page_size = 10
-        if keyword or source_id:
+        if keyword or source_name:
             total, records = WatchtowerRepository.list_records_filtered(
                 page=page,
                 page_size=page_size,
                 keyword=keyword or None,
-                source_id=int(source_id) if source_id else None,
+                source_name=source_name or None,
                 user_name=self.current_user,
             )
         else:
@@ -62,7 +62,7 @@ class PortalWatchDatabaseHandler(BaseHandler):
             has_prev=page > 1,
             has_next=page < total_pages,
             keyword=keyword,
-            source_id=source_id,
+            source_name=source_name,
             active_nav="database",
         )
 

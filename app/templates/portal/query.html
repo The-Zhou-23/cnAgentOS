@@ -75,7 +75,7 @@ queryForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   outputBox.textContent = '正在生成 SQL 并查询...';
   sqlBox.textContent = '生成中...';
-  const resp = await fetch('/user/watch/ask', { method: 'POST', body: new FormData(queryForm) });
+  const resp = await fetch('/portal/query/ask', { method: 'POST', body: new FormData(queryForm) });
   const data = await resp.json().catch(() => null);
   if (!data || !data.ok) {
     outputBox.textContent = data?.error || '问数失败';

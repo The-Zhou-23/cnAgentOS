@@ -78,25 +78,37 @@ class PortalQueryAskHandler(BaseHandler):
             return
 
         sql = raw_sql.strip()
+        try:
+            payload = json.loads(raw_sql)
+            sql = (((payload.get("choices") or [{}])[0].get("message") or {}).get("content") or sql).strip()
+        except Exception:
+            pass
         if sql.startswith("```"):
             sql = re.sub(r"^```(?:sql)?\s*", "", sql, flags=re.I)
             sql = re.sub(r"\s*```$", "", sql)
 
         banned = ["insert", "update", "delete", "drop", "alter", "create", "attach", "pragma"]
+        sql = sql.strip().rstrip(";")
         sql_lower = sql.lower().strip()
-        if not sql_lower.startswith("select") or any(word in sql_lower for word in banned) or sql_lower.count(";") > 0 or "watch_records" not in sql_lower:
+        if not sql_lower.startswith("select") or any(word in sql_lower for word in banned) or ";" in sql_lower or "watch_records" not in sql_lower:
             self.set_status(400)
             self.write({"ok": False, "error": "生成的SQL不安全", "sql": sql})
             return
 
         if "limit" not in sql_lower:
-            sql = sql.rstrip(";") + " LIMIT 20"
+            sql = sql + " LIMIT 20"
+            sql_lower = sql.lower().strip()
 
         try:
             with get_connection() as conn:
                 conn.row_factory = None
                 rows = conn.execute(sql).fetchall()
-            result_rows = [dict(row) if hasattr(row, "keys") else list(row) for row in rows]
+            result_rows = []
+            for row in rows:
+                if hasattr(row, "keys"):
+                    result_rows.append(dict(row))
+                else:
+                    result_rows.append({f"col_{idx}": value for idx, value in enumerate(row)})
         except Exception as exc:
             self.set_status(500)
             self.write({"ok": False, "error": f"SQL执行失败: {exc}", "sql": sql})
