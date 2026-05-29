@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - cnAgentOS</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+</head>
+<body class="admin-shell">
+    <div class="page-shell">
+        {% set active_page = 'database_migrate' %}
+        {% include "_sidebar.html" %}
+
+        <main class="main">
+            <div class="topbar">
+                <div>
+                    <div class="kicker"><i class="fas fa-database me-2"></i>系统管理</div>
+                    <h1 class="title-large mb-0">数据库迁移</h1>
+                    <div class="subtitle">数据迁移工具，支持 SQLite 与 MySQL 之间的数据迁移</div>
+                </div>
+                <span class="badge-soft"><i class="fas fa-user me-2"></i>{{ username }}</span>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-exchange-alt"></i> 迁移工具</h3>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>注意:</strong> 数据迁移操作有风险，请在操作前备份数据库。建议在测试环境验证后再在生产环境执行。
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="well">
+                            <h4><i class="fas fa-arrow-right"></i> SQLite → MySQL</h4>
+                            <p class="text-muted">将 SQLite 数据库中的数据迁移到 MySQL</p>
+                            <button class="btn btn-primary" id="migrateToMysql">
+                                <i class="fas fa-arrow-right"></i> 开始迁移
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="well">
+                            <h4><i class="fas fa-arrow-left"></i> MySQL → SQLite</h4>
+                            <p class="text-muted">将 MySQL 数据库中的数据迁移到 SQLite</p>
+                            <button class="btn btn-secondary" id="migrateToSqlite">
+                                <i class="fas fa-arrow-left"></i> 开始迁移
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-info-circle"></i> 当前状态</h3>
+                <div class="alert alert-info">
+                    <strong>当前数据库:</strong> {{ 'SQLite' if current_db_type == 'sqlite' else 'MySQL' }}
+                    <br />
+                    <strong>迁移步骤:</strong>
+                    <ol>
+                        <li>在数据库设置页面配置目标数据库连接</li>
+                        <li>测试目标数据库连接是否正常</li>
+                        <li>执行数据迁移</li>
+                        <li>验证迁移结果</li>
+                    </ol>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('migrateToMysql').addEventListener('click', function() {
+                if (confirm('确定要将 SQLite 数据迁移到 MySQL 吗？\n\n注意：请确保已在数据库设置页面配置并测试通过 MySQL 连接。')) {
+                    alert('迁移功能开发中，请稍后使用');
+                }
+            });
+
+            document.getElementById('migrateToSqlite').addEventListener('click', function() {
+                if (confirm('确定要将 MySQL 数据迁移到 SQLite 吗？')) {
+                    alert('迁移功能开发中，请稍后使用');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

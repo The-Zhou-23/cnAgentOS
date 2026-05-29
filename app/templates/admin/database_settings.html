@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }} - cnAgentOS</title>
+    <link rel="stylesheet" href="{{ static_url('dist/bootstrap-5.3.8-dist/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('dist/fontawesome-free-5.15.4-web/css/all.min.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+    <style>
+        .db-card {
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .db-card:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.03);
+        }
+        .db-card.selected {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.08);
+        }
+        .db-card input[type="radio"] {
+            display: none;
+        }
+        .db-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+        .btn-test {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body class="admin-shell">
+    <div class="page-shell">
+        {% set active_page = 'database_settings' %}
+        {% include "_sidebar.html" %}
+
+        <main class="main">
+            <div class="topbar">
+                <div>
+                    <div class="kicker"><i class="fas fa-database me-2"></i>系统管理</div>
+                    <h1 class="title-large mb-0">数据库配置</h1>
+                    <div class="subtitle">管理数据库连接，支持 SQLite 和 MySQL 切换</div>
+                </div>
+                <span class="badge-soft"><i class="fas fa-user me-2"></i>{{ username }}</span>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-server"></i> 选择数据库类型</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="db-card w-100" {% if current_db_type == 'sqlite' %}class="db-card w-100 selected"{% end %}>
+                            <input type="radio" name="db_type" value="sqlite" {% if current_db_type == 'sqlite' %}checked{% end %} />
+                            <div class="text-center">
+                                <div class="db-icon text-secondary"><i class="fas fa-database"></i></div>
+                                <h4>SQLite</h4>
+                                <p class="text-muted text-sm">轻量级嵌入式数据库，适合开发和小型部署</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="db-card w-100" {% if current_db_type == 'mysql' %}class="db-card w-100 selected"{% end %}>
+                            <input type="radio" name="db_type" value="mysql" {% if current_db_type == 'mysql' %}checked{% end %} />
+                            <div class="text-center">
+                                <div class="db-icon text-orange"><i class="fab fa-mysql"></i></div>
+                                <h4>MySQL</h4>
+                                <p class="text-muted text-sm">高性能关系型数据库，适合生产环境</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-cog"></i> MySQL 连接配置</h3>
+                <form id="dbConfigForm">
+                    {% module xsrf_form_html() %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>数据库类型</label>
+                                <select name="db_type" class="form-control">
+                                    <option value="sqlite" {% if current_db_type == 'sqlite' %}selected{% end %}>SQLite</option>
+                                    <option value="mysql" {% if current_db_type == 'mysql' %}selected{% end %}>MySQL</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>主机地址</label>
+                                <input type="text" name="host" class="form-control" value="{{ mysql_config.get('host', 'localhost') }}" placeholder="localhost" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>端口</label>
+                                <input type="number" name="port" class="form-control" value="{{ mysql_config.get('port', 3306) }}" min="1" max="65535" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>数据库名</label>
+                                <input type="text" name="database" class="form-control" value="{{ mysql_config.get('database', 'cnagentos') }}" placeholder="cnagentos" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>用户名</label>
+                                <input type="text" name="username" class="form-control" value="{{ mysql_config.get('username', 'root') }}" placeholder="root" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>密码</label>
+                                <input type="password" name="password" class="form-control" value="{{ mysql_config.get('password', '') }}" placeholder="输入密码" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline-primary btn-test" id="testConnection">
+                            <i class="fas fa-plug"></i> 测试连接
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存配置
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-info-circle"></i> 当前状态</h3>
+                <div class="alert alert-info">
+                    <strong>当前数据库:</strong> {{ 'SQLite' if current_db_type == 'sqlite' else 'MySQL' }}
+                    <br />
+                    <strong>提示:</strong> 切换数据库类型后，系统会自动创建相应的表结构。MySQL 需要提前创建数据库并配置正确的权限。
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 测试连接
+            document.getElementById('testConnection').addEventListener('click', async function() {
+                const btn = this;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试中...';
+                btn.disabled = true;
+
+                const formData = new FormData(document.getElementById('dbConfigForm'));
+                
+                try {
+                    const response = await fetch('/admin/database/test', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('连接测试成功！');
+                    } else {
+                        alert('连接测试失败: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('测试失败: ' + error.message);
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            });
+
+            // 保存配置
+            document.getElementById('dbConfigForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const btn = e.target.querySelector('button[type="submit"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+                btn.disabled = true;
+
+                const formData = new FormData(this);
+                
+                try {
+                    const response = await fetch('/admin/database/save', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('配置保存成功！');
+                        window.location.reload();
+                    } else {
+                        alert('保存失败: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('保存失败: ' + error.message);
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            });
+
+            // 数据库类型卡片切换
+            document.querySelectorAll('.db-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const radio = this.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    
+                    // 更新select的值
+                    document.querySelector('select[name="db_type"]').value = radio.value;
+                    
+                    // 更新选中状态
+                    document.querySelectorAll('.db-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

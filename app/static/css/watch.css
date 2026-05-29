@@ -265,18 +265,24 @@
 }
 
 .delete-source-btn {
-  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
-  color: var(--watch-danger);
+  color: #dc2626;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .delete-source-btn:hover {
   background: rgba(239, 68, 68, 0.25);
-  border-color: var(--watch-danger);
+  border-color: #dc2626;
+  color: #b91c1c;
 }
 
 .source-actions {
@@ -286,18 +292,24 @@
 }
 
 .delete-source-btn {
-  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
-  color: var(--watch-danger);
+  color: #dc2626;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .delete-source-btn:hover {
   background: rgba(239, 68, 68, 0.25);
-  border-color: var(--watch-danger);
+  border-color: #dc2626;
+  color: #b91c1c;
 }
 
 .source-toggle {
@@ -513,4 +525,85 @@
     width: 95%;
     margin: 10px;
   }
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--text);
+}
+
+.add-source-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s ease;
+}
+
+.add-source-btn:hover {
+  background: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
 }

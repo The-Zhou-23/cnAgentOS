@@ -9,6 +9,7 @@ FEATURE_DEFINITIONS = [
     ("角色管理", "feature.roles", "系统管理", "/admin/roles", "system.role", "fas fa-user-shield", "roles", 20),
     ("权限管理", "feature.permissions", "系统管理", "/admin/permissions", "system.permission", "fas fa-sitemap", "permissions", 30),
     ("功能菜单", "feature.features", "系统管理", "/admin/features", "system.feature", "fas fa-th-large", "features", 40),
+    ("数据库配置", "feature.database", "系统管理", "/admin/database", "system.database", "fas fa-database", "database", 45),
     ("接口管理", "feature.api", "业务管理", "/admin/api-interfaces", "system.api", "fas fa-plug", "api_interfaces", 50),
     ("数字员工", "feature.digital", "业务管理", "/admin/digital-employees", "system.digital_employee", "fas fa-user-astronaut", "digital_employees", 60),
     ("模型引擎", "feature.models", "业务管理", "/admin/models", "system.model", "fas fa-microchip", "models", 70),
@@ -16,6 +17,7 @@ FEATURE_DEFINITIONS = [
     ("聊天文件", "feature.chat_files", "业务管理", "/admin/chat/files", "system.chat_file", "fas fa-folder-open", "chat_files", 110),
     ("聊天服务器", "feature.chat_servers", "业务管理", "/admin/chat/servers", "system.chat_server", "fas fa-server", "chat_servers", 120),
     ("工具集管理", "feature.tools", "业务管理", "/admin/tools", "system.ai_tool", "fas fa-toolbox", "tools", 130),
+    ("自动化调度", "feature.automation", "业务管理", "/admin/automation", "system.automation", "fas fa-robot", "automation", 140),
 ]
 
 

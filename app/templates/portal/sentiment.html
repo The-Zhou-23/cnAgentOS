@@ -1,0 +1,119 @@
+{% extends "../portal_base.html" %}
+
+{% block portal_extra_head %}
+<link rel="stylesheet" href="{{ static_url('css/sentiment.css') }}" />
+{% end %}
+
+{% block portal_content %}
+<div class="portal-page-head sentiment-page-head">
+    <div>
+        <div class="kicker"><i class="fas fa-chart-pie me-2"></i>智慧舆情</div>
+        <h1 class="title-large">舆情分析中心</h1>
+        <p class="subtitle">融合智能瞭望与聊天数据，由 AI 自动生成结构化分析报告。</p>
+    </div>
+    <div>
+        <a href="/portal/bigscreen" class="btn btn-primary">
+            <i class="fas fa-tv me-1"></i> 进入数智大屏
+        </a>
+    </div>
+</div>
+
+<div class="sentiment-metrics-grid">
+    <div class="sentiment-metric-card">
+        <span class="label">瞭望总数</span>
+        <span class="value" id="metric-watch">{{ metrics['watch_total'] }}</span>
+        <i class="icon fas fa-binoculars"></i>
+    </div>
+    <div class="sentiment-metric-card">
+        <span class="label">数据源</span>
+        <span class="value" id="metric-source">{{ metrics['source_total'] }}</span>
+        <i class="icon fas fa-database"></i>
+    </div>
+    <div class="sentiment-metric-card">
+        <span class="label">聊天文本数</span>
+        <span class="value" id="metric-chat">{{ metrics['chat_total'] }}</span>
+        <i class="icon fas fa-comments"></i>
+    </div>
+    <div class="sentiment-metric-card">
+        <span class="label">今日采集</span>
+        <span class="value" id="metric-today">{{ metrics['today_watch'] }}</span>
+        <i class="icon fas fa-bolt"></i>
+    </div>
+</div>
+
+<div class="sentiment-toolbar">
+    <label class="form-label m-0 me-1"><i class="fas fa-filter me-1"></i>数据范围</label>
+    <select id="scope" class="form-select form-select-sm">
+        <option value="all">全域（瞭望 + 聊天）</option>
+        <option value="watch">仅瞭望</option>
+        <option value="chat">仅聊天</option>
+    </select>
+    <label class="form-label m-0 ms-2 me-1">时间窗口</label>
+    <select id="days" class="form-select form-select-sm">
+        <option value="7">近 7 天</option>
+        <option value="14" selected>近 14 天</option>
+        <option value="30">近 30 天</option>
+        <option value="60">近 60 天</option>
+    </select>
+    <label class="form-label m-0 ms-2 me-1">样本量</label>
+    <select id="sample-size" class="form-select form-select-sm">
+        <option value="20">20 条</option>
+        <option value="30" selected>30 条</option>
+        <option value="50">50 条</option>
+        <option value="80">80 条</option>
+    </select>
+    <span class="toolbar-spacer"></span>
+    <button id="btn-refresh" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-sync-alt me-1"></i>刷新数据
+    </button>
+    <button id="btn-analyze" class="btn btn-primary btn-sm">
+        <i class="fas fa-robot me-1"></i>AI 分析
+    </button>
+</div>
+
+<div class="sentiment-grid">
+    <div class="sentiment-panel">
+        <h3><i class="fas fa-cloud"></i>关键词词云</h3>
+        <div class="sentiment-panel-body" id="panel-wordcloud">
+            <div class="sentiment-empty"><i class="fas fa-spinner fa-spin"></i>加载中...</div>
+        </div>
+    </div>
+    <div class="sentiment-panel">
+        <h3><i class="fas fa-database"></i>来源分布</h3>
+        <div class="sentiment-panel-body" id="panel-sources">
+            <div class="sentiment-empty"><i class="fas fa-spinner fa-spin"></i>加载中...</div>
+        </div>
+    </div>
+    <div class="sentiment-panel" style="grid-column: 1 / -1;">
+        <h3><i class="fas fa-chart-line"></i>采集 / 聊天 趋势</h3>
+        <div class="sentiment-panel-body" id="panel-trend">
+            <div class="sentiment-empty"><i class="fas fa-spinner fa-spin"></i>加载中...</div>
+        </div>
+    </div>
+
+    <div class="sentiment-panel sentiment-report" style="grid-column: 1 / -1;">
+        <div class="sentiment-report-header">
+            <h3><i class="fas fa-file-alt"></i>AI 舆情分析报告</h3>
+            <span class="sentiment-report-meta" id="report-meta">点击右上「AI 分析」按钮生成报告</span>
+        </div>
+        <div class="sentiment-report-content" id="report-content">
+            <div class="sentiment-empty">
+                <i class="fas fa-magic"></i>
+                选择数据范围与时间窗口，点击「AI 分析」即可由模型生成结构化报告（摘要 / 热点 / 风险 / 建议）。
+            </div>
+        </div>
+    </div>
+</div>
+
+{% end %}
+
+{% block extra_js %}
+<script src="{{ static_url('js/voice.js') }}"></script>
+<script src="{{ static_url('js/gesture.js') }}"></script>
+<script>
+window.__SENTIMENT_DATA_URL__ = "/portal/sentiment/data";
+window.__SENTIMENT_ANALYZE_URL__ = "/portal/sentiment/analyze";
+window.__XSRF__ = "{{ handler.xsrf_token.decode('utf-8') if isinstance(handler.xsrf_token, bytes) else handler.xsrf_token }}";
+</script>
+<script src="{{ static_url('js/sentiment.js') }}"></script>
+{% end %}

@@ -61,6 +61,7 @@ from app.controllers.portal_digital import (
     PortalDigitalEmployeeChatHandler,
     PortalDigitalEmployeeListHandler,
 )
+from app.controllers.voice_tts import VoiceTTSHandler
 from app.controllers.auth import LoginHandler, LogoutHandler, RegisterHandler
 from app.controllers.home import IndexHandler
 from app.controllers._temp_a_portal_stubs import (
@@ -74,14 +75,36 @@ from app.controllers.portal_chat import (
     PortalChatHandler,
     PortalChatUploadHandler,
 )
+# 成员 D：智慧舆情（任务三）
+from app.controllers.portal_sentiment import (
+    PortalBigscreenHandler,
+    PortalSentimentAnalyzeHandler,
+    PortalSentimentDataHandler,
+    PortalSentimentHandler,
+)
 from app.controllers.admin_chat import (
     AdminChatFilesHandler,
     AdminChatGroupMembersHandler,
     AdminChatGroupsHandler,
     AdminChatServersHandler,
 )
+from app.controllers.admin_automation import (
+    AdminAutomationListHandler,
+    AdminAutomationCreateHandler,
+    AdminAutomationUpdateHandler,
+    AdminAutomationDeleteHandler,
+    AdminAutomationToggleHandler,
+    AdminAutomationRunHandler,
+)
 from app.controllers.admin_tools import AdminToolsHandler
-from app.models.db import get_connection, init_db
+from app.controllers.admin_database import (
+    AdminDatabaseSettingsHandler,
+    AdminDatabaseTestHandler,
+    AdminDatabaseSaveHandler,
+    AdminDatabaseMigrateHandler,
+)
+from app.models.database import get_connection
+from app.models.db import init_db
 from app.models.model_service import ModelServiceRepository
 from app.models.digital_employee import DigitalEmployeeRepository
 from app.models.user import UserRepository
@@ -165,10 +188,16 @@ def make_app():
             # 用户侧数字员工大厅（成员 D）
             (r"/portal/digital-employee", PortalDigitalEmployeeListHandler),
             (r"/portal/digital-employee/chat", PortalDigitalEmployeeChatHandler),
+            (r"/api/voice/tts", VoiceTTSHandler),
             (r"/portal/chat", PortalChatHandler),
             (r"/portal/chat/api/([^/]+)", PortalChatApiHandler),
             (r"/portal/chat/upload", PortalChatUploadHandler),
             (r"/portal/chat/file/(\d+)", PortalChatFileHandler),
+            # 成员 D：智慧舆情（任务三）路由
+            (r"/portal/bigscreen", PortalBigscreenHandler),
+            (r"/portal/sentiment", PortalSentimentHandler),
+            (r"/portal/sentiment/data", PortalSentimentDataHandler),
+            (r"/portal/sentiment/analyze", PortalSentimentAnalyzeHandler),
             (r"/admin/chat/groups", AdminChatGroupsHandler),
             (r"/admin/chat/groups/(\d+)/members", AdminChatGroupMembersHandler),
             (r"/admin/chat/files", AdminChatFilesHandler),
@@ -176,6 +205,17 @@ def make_app():
             (r"/admin/tools", AdminToolsHandler),
             (r"/admin/features", AdminFeatureListHandler),
             (r"/admin/features/update/(\d+)", AdminFeatureUpdateHandler),
+            (r"/admin/automation", AdminAutomationListHandler),
+            (r"/admin/automation/create", AdminAutomationCreateHandler),
+            (r"/admin/automation/update/(\d+)", AdminAutomationUpdateHandler),
+            (r"/admin/automation/delete/(\d+)", AdminAutomationDeleteHandler),
+            (r"/admin/automation/toggle/(\d+)", AdminAutomationToggleHandler),
+            (r"/admin/automation/run/(\d+)", AdminAutomationRunHandler),
+            # 成员 C：数据库配置（任务五）
+            (r"/admin/database", AdminDatabaseSettingsHandler),
+            (r"/admin/database/test", AdminDatabaseTestHandler),
+            (r"/admin/database/save", AdminDatabaseSaveHandler),
+            (r"/admin/database/migrate", AdminDatabaseMigrateHandler),
         ],
         **settings,
     )
@@ -185,13 +225,19 @@ def check_static_assets():
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app", "static", "dist")
     required = [
         "bootstrap-5.3.8-dist/css/bootstrap.min.css",
+        "bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js",
         "fontawesome-free-5.15.4-web/css/all.min.css",
+        "fontawesome-free-5.15.4-web/webfonts/fa-solid-900.woff2",
+        "fontawesome-free-5.15.4-web/webfonts/fa-regular-400.woff2",
+        "fontawesome-free-5.15.4-web/webfonts/fa-brands-400.woff2",
     ]
     missing = [p for p in required if not os.path.isfile(os.path.join(base, *p.split("/")))]
     if missing:
         print("[警告] 缺少本地静态资源，页面样式可能异常。请解压前端组件到 app/static/dist/：")
         for item in missing:
             print(f"  - {item}")
+    else:
+        print("[OK] 静态资源检查通过")
 
 
 if __name__ == "__main__":
@@ -204,5 +250,8 @@ if __name__ == "__main__":
     server = HTTPServer(app)
     server.bind(10087)
     server.start()
+    from app.models.workflow import WorkflowEngine
+    scheduler = tornado.ioloop.PeriodicCallback(WorkflowEngine.check_and_run, 30000)
+    scheduler.start()
     print("====== Server 启动成功 ======== 端口：10087 ======")
     tornado.ioloop.IOLoop.current().start()

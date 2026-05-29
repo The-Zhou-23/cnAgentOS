@@ -26,6 +26,77 @@ function initWatchSources() {
     configInputs.forEach(input => {
         input.addEventListener('change', handleConfigSave);
     });
+
+    // 初始化添加采集源模态框
+    initAddSourceModal();
+}
+
+/**
+ * 初始化添加采集源模态框
+ */
+function initAddSourceModal() {
+    const addSourceBtn = document.getElementById('addSourceBtn');
+    const addSourceModal = document.getElementById('addSourceModal');
+    const closeModal = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    // 打开模态框
+    if (addSourceBtn && addSourceModal) {
+        addSourceBtn.addEventListener('click', () => {
+            addSourceModal.classList.add('show');
+        });
+    }
+
+    // 关闭模态框
+    const closeModalFn = () => {
+        if (addSourceModal) {
+            addSourceModal.classList.remove('show');
+        }
+    };
+
+    if (closeModal) {
+        closeModal.addEventListener('click', closeModalFn);
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeModalFn);
+    }
+
+    // 点击遮罩关闭模态框
+    if (addSourceModal) {
+        addSourceModal.addEventListener('click', (e) => {
+            if (e.target === addSourceModal) {
+                closeModalFn();
+            }
+        });
+    }
+
+    // 添加采集源表单提交
+    const addSourceForm = document.getElementById('addSourceForm');
+    if (addSourceForm) {
+        addSourceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const formData = new FormData(addSourceForm);
+                const response = await fetch('/admin/watch-sources/create', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    closeModalFn();
+                    addSourceForm.reset();
+                    // 刷新页面或更新采集源列表
+                    window.location.reload();
+                } else {
+                    console.error('添加采集源失败');
+                }
+            } catch (err) {
+                console.error('添加采集源失败:', err);
+            }
+        });
+    }
 }
 
 /**

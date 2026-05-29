@@ -9,6 +9,7 @@ PERMISSION_DEFINITIONS = [
     ("系统管理", "角色管理", "system.role", 20),
     ("系统管理", "权限管理", "system.permission", 30),
     ("系统管理", "功能菜单", "system.feature", 40),
+    ("系统管理", "数据库配置", "system.database", 45),
     ("业务管理", "接口管理", "system.api", 50),
     ("业务管理", "数字员工", "system.digital_employee", 60),
     ("业务管理", "模型引擎", "system.model", 70),
@@ -18,11 +19,13 @@ PERMISSION_DEFINITIONS = [
     ("业务管理", "聊天文件", "system.chat_file", 110),
     ("业务管理", "聊天服务器", "system.chat_server", 120),
     ("业务管理", "工具集管理", "system.ai_tool", 130),
+    ("业务管理", "自动化调度", "system.automation", 140),
 ]
 
 # 普通管理员默认拥有的业务权限（不含角色/权限/功能菜单配置）
 NORMAL_ADMIN_PERMISSION_CODES = [
     "system.user",
+    "system.database",
     "system.api",
     "system.digital_employee",
     "system.model",
@@ -32,6 +35,7 @@ NORMAL_ADMIN_PERMISSION_CODES = [
     "system.chat_file",
     "system.chat_server",
     "system.ai_tool",
+    "system.automation",
 ]
 
 OBSOLETE_PERMISSION_CODES = ("system.menu",)

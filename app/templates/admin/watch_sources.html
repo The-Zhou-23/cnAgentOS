@@ -107,8 +107,9 @@
                                     <input type="checkbox" class="source-switch" data-source-id="{{ source['id'] }}" {% if source['is_enabled'] %}checked{% end %} />
                                     <!-- <span class="toggle-slider"></span> -->
                                 </label>
-                                <button class="delete-source-btn" data-source-id="{{ source['id'] }}">
+                                <button class="delete-source-btn" data-source-id="{{ source['id'] }}" title="删除此采集源">
                                     <i class="fas fa-trash"></i>
+                                    <span>删除</span>
                                 </button>
                             </div>
                         </div>
