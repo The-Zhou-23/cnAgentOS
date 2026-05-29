@@ -68,7 +68,7 @@ from app.controllers._temp_a_portal_stubs import (
     TempPortalDigitalEmployeeHandler,
 )
 from app.controllers.portal_query import PortalQueryAskHandler, PortalQueryHandler
-from app.controllers.portal_watch import PortalWatchBatchDeleteHandler, PortalWatchCollectHandler, PortalWatchDatabaseHandler, PortalWatchDeleteHandler, PortalWatchListHandler
+from app.controllers.portal_watch import PortalWatchBatchDeleteHandler, PortalWatchCollectHandler, PortalWatchDeleteHandler, PortalWatchListHandler
 from app.controllers.portal_chat import (
     PortalChatApiHandler,
     PortalChatFileHandler,
@@ -146,11 +146,10 @@ def make_app():
             (r"/portal/query", PortalQueryHandler),
             (r"/portal/query/ask", PortalQueryAskHandler),
             # 成员 C：智能瞭望用户侧路由
-            (r"/user/watch", PortalWatchListHandler),
-            (r"/user/watch/database", PortalWatchDatabaseHandler),
-            (r"/user/watch/collect", PortalWatchCollectHandler),
-            (r"/user/watch/delete/(\d+)", PortalWatchDeleteHandler),
-            (r"/user/watch/batch-delete", PortalWatchBatchDeleteHandler),
+            (r"/portal/watch", PortalWatchListHandler),
+            (r"/portal/watch/collect", PortalWatchCollectHandler),
+            (r"/portal/watch/delete/(\d+)", PortalWatchDeleteHandler),
+            (r"/portal/watch/batch-delete", PortalWatchBatchDeleteHandler),
             (r"/admin/login", AdminLoginHandler),
             (r"/admin/logout", AdminLogoutHandler),
             (r"/admin/users", AdminUserListHandler),
