@@ -19,10 +19,14 @@
 .vault-panel { padding: 24px; }
 .watch-input { width: 100%; min-height: 120px; border-radius: 20px; border: 1px solid #e5e7eb; padding: 18px 20px; font-size: 18px; outline: none; background: #0f172a; color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 .watch-input::placeholder { color: rgba(255,255,255,.4); }
-.watch-toggle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 18px; }
-.toggle-chip { border-radius: 18px; padding: 14px 16px; border: 1px solid #e5e7eb; background: #fff; display:flex; justify-content:space-between; align-items:center; gap:12px; transition: .2s ease; cursor: pointer; }
-.toggle-chip input { width: 18px; height: 18px; }
-.toggle-chip.active { border-color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,.12); transform: translateY(-1px); }
+.watch-toggle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+.toggle-chip { position: relative; border-radius: 22px; padding: 20px 22px; border: 1px solid #dbe4ee; background: linear-gradient(180deg, #ffffff, #f8fbff); display:flex; justify-content:space-between; align-items:center; gap:16px; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; cursor: pointer; min-height: 92px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
+.toggle-chip:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(15,23,42,.10); }
+.toggle-chip input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: #10b981; }
+.toggle-chip strong { font-size: 18px; line-height: 1.2; }
+.toggle-chip small { display:inline-block; margin-top: 6px; font-size: 13px; color:#64748b; line-height: 1.5; }
+.toggle-chip.active { border-color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,.12), 0 14px 36px rgba(15,23,42,.10); transform: translateY(-2px); }
+.toggle-chip .toggle-chip-icon { width: 44px; height: 44px; border-radius: 14px; display:flex; align-items:center; justify-content:center; background: rgba(16,185,129,.10); color:#059669; font-size: 18px; flex: 0 0 auto; }
 .watch-config { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
 .config-card { border-radius: 18px; border: 1px solid #e5e7eb; padding: 14px; background: #f8fafc; }
 .config-card label { display:block; font-size: 12px; color:#64748b; margin-bottom: 6px; }
@@ -55,13 +59,16 @@
     <form id="watchForm">
       {% module xsrf_form_html() %}
       <textarea class="watch-input" name="prompt" placeholder="例如：帮我采集四川农业大学相关的10条新闻"></textarea>
+      <input type="hidden" name="area_name" id="areaNameInput" value="">
+      <input type="hidden" name="word" id="wordInput" value="">
+      <input type="hidden" name="region" id="regionInput" value="">
 
       <div style="margin-top:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <div>
           <div class="badge-soft">默认源</div>
-          <h3 style="margin:8px 0 0; font-size:20px; font-weight:800; color:#fff;">百度新闻采集</h3>
+          <h3 style="margin:8px 0 0; font-size:20px; font-weight:800; color:#fff;">百度新闻 / 地区新闻</h3>
         </div>
-        <div class="tag">自动使用</div>
+        <div class="tag">自动解析</div>
       </div>
       <div class="vault-item" style="margin-top:12px; background: rgba(255,255,255,.06); color:#fff; border-color: rgba(255,255,255,.14);">
         <div class="vault-meta" style="color: rgba(255,255,255,.72);">
@@ -70,7 +77,7 @@
           <span>分页步进：10</span>
         </div>
         <div style="margin-top:8px; color: rgba(255,255,255,.8); font-size:13px; line-height:1.6;">
-          默认流程：用户输入一句话 → 默认模型解析 JSON → 使用百度新闻采集 → 结果写入数据库仓库。
+          默认流程：用户输入一句话 → 默认模型解析 JSON → 自动选择百度新闻或地区新闻 → 结果写入数据库仓库。
         </div>
       </div>
 
@@ -78,26 +85,27 @@
         {% if sources %}
           {% for source in sources %}
           <label class="toggle-chip {% if source['is_enabled'] %}active{% end %}">
-            <span>
-              <strong>{{ source['name'] }}</strong><br>
-              <small>{{ source['note'] }}</small>
+            <span style="display:flex; align-items:center; gap:14px; flex:1; min-width:0;">
+              <span class="toggle-chip-icon"><i class="fas fa-rss"></i></span>
+              <span style="min-width:0;">
+                <strong>{{ source['name'] }}</strong><br>
+                <small>{{ source['note'] }}</small>
+              </span>
             </span>
             <input type="checkbox" name="source_ids" value="{{ source['id'] }}" {% if source['is_enabled'] %}checked{% end %}>
           </label>
           {% end %}
         {% else %}
           <div class="vault-item" style="grid-column:1/-1;">
-            你还没有自定义采集源，系统会默认使用百度新闻采集。
+            你还没有自定义采集源，系统会默认使用百度新闻、地区新闻和娱乐新闻采集。
           </div>
         {% end %}
       </div>
 
-      <div class="watch-config">
-        <div class="config-card">
-          <label>当前自定义源数量</label>
-          <input type="text" value="{{ source_count }}" readonly>
-        </div>
+      <div style="margin-top:12px; font-size:12px; color: rgba(15,23,42,.72);">
+        采集源通过上面的复选框勾选/取消勾选后生效。
       </div>
+
       <div class="watch-actions">
         <button type="submit" class="btn-watch btn-watch-primary">开始采集</button>
         <button type="reset" class="btn-watch btn-watch-ghost">清空</button>
@@ -115,45 +123,20 @@ sourceGrid?.addEventListener('change', (e) => {
   const label = e.target.closest('.toggle-chip');
   if (label) label.classList.toggle('active', e.target.checked);
 });
-const checkAllWatch = document.getElementById('checkAllWatch');
-const batchDeleteBtn = document.getElementById('batchDeleteBtn');
-const vaultForm = document.getElementById('vaultForm');
-const recordChecks = () => Array.from(document.querySelectorAll('.vault-record-check'));
-checkAllWatch?.addEventListener('change', () => {
-  recordChecks().forEach(cb => { cb.checked = checkAllWatch.checked; });
-});
-recordChecks().forEach(cb => cb.addEventListener('change', () => {
-  if (checkAllWatch) checkAllWatch.checked = recordChecks().length > 0 && recordChecks().every(x => x.checked);
-}));
-batchDeleteBtn?.addEventListener('click', () => {
-  const count = recordChecks().filter(x => x.checked).length;
-  if (!count) return alert('请先选择要删除的记录');
-  if (confirm(`确认删除选中的 ${count} 条记录吗？`)) {
-    vaultForm?.submit();
-  }
-});
-Array.from(document.querySelectorAll('.delete-one-btn')).forEach(btn => {
-  btn.addEventListener('click', () => {
-    const url = btn.getAttribute('data-delete-url');
-    if (url && confirm('确认删除这条记录？')) {
-      const f = document.createElement('form');
-      f.method = 'post';
-      f.action = url;
-      const xsrf = document.querySelector('#vaultForm input[name="_xsrf"]');
-      if (xsrf) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = '_xsrf';
-        input.value = xsrf.value;
-        f.appendChild(input);
-      }
-      document.body.appendChild(f);
-      f.submit();
-    }
-  });
-});
+const areaNameInput = document.getElementById('areaNameInput');
+const wordInput = document.getElementById('wordInput');
+const regionInput = document.getElementById('regionInput');
 form?.addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (areaNameInput) areaNameInput.value = '';
+  if (wordInput) wordInput.value = '';
+  if (regionInput) regionInput.value = '';
+  const checked = Array.from(document.querySelectorAll('input[name="source_ids"]:checked')).map(x => x.value);
+  if (!checked.length) {
+    const first = document.querySelector('input[name="source_ids"]');
+    if (first) first.checked = true;
+    if (first?.closest('.toggle-chip')) first.closest('.toggle-chip').classList.add('active');
+  }
   streamBox.textContent = '开始采集...\n';
   const resp = await fetch('/user/watch/collect', { method: 'POST', body: new FormData(form) });
   if (!resp.ok || !resp.body) { streamBox.textContent += '请求失败'; return; }

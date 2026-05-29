@@ -120,6 +120,12 @@ def init_db():
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 url TEXT NOT NULL,
+                source_url TEXT NOT NULL DEFAULT '',
+                publish_time TEXT NOT NULL DEFAULT '',
+                region TEXT NOT NULL DEFAULT '',
+                school TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL DEFAULT '',
+                view_count TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT(datetime('now'))
             )
             """
@@ -162,6 +168,23 @@ def init_db():
         _ensure_column(conn, "watch_sources", "user_name", "user_name TEXT NOT NULL DEFAULT ''")
         _ensure_column(conn, "watch_sources", "parse_rules_json", "parse_rules_json TEXT NOT NULL DEFAULT '{}' ")
         _ensure_column(conn, "watch_records", "user_name", "user_name TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "source_url", "source_url TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "publish_time", "publish_time TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "region", "region TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "school", "school TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "category", "category TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "view_count", "view_count TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "source_name", "source_name TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "keyword", "keyword TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "title", "title TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "content", "content TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "url", "url TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "source_url", "source_url TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "publish_time", "publish_time TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "region", "region TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "school", "school TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "category", "category TEXT NOT NULL DEFAULT ''")
+        _ensure_column(conn, "watch_records", "view_count", "view_count TEXT NOT NULL DEFAULT ''")
 
         conn.execute(
             """

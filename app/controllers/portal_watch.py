@@ -4,6 +4,7 @@
 """
 import json
 import math
+import os
 
 import tornado.web
 
@@ -15,11 +16,9 @@ from app.models.watchtower import WatchtowerRepository
 class PortalWatchListHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
+        WatchtowerRepository.init_default_sources(self.current_user)
         sources = WatchtowerRepository.list_sources(user_name=self.current_user)
         baidu = WatchtowerRepository.get_source_by_code("baidu_news", user_name=self.current_user)
-        if not baidu:
-            WatchtowerRepository.create_default_baidu_source(self.current_user)
-            baidu = WatchtowerRepository.get_source_by_code("baidu_news", user_name=self.current_user)
         self.render(
             "portal/watch_list.html",
             title="智能瞭望",
@@ -72,6 +71,9 @@ class PortalWatchCollectHandler(BaseHandler):
     def post(self):
         prompt = (self.get_body_argument("prompt", "") or "").strip()
         source_ids = self.get_body_arguments("source_ids")
+        area_name = (self.get_body_argument("area_name", "") or "").strip()
+        word = (self.get_body_argument("word", "") or "").strip()
+        region = (self.get_body_argument("region", "") or "").strip()
         item_count = int(self.get_body_argument("item_count", 10) or 10)
         start_page = int(self.get_body_argument("start_page", 0) or 0)
         self.set_header("Content-Type", "text/event-stream; charset=utf-8")
@@ -125,12 +127,20 @@ class PortalWatchCollectHandler(BaseHandler):
                 start_v = 20
             elif re.search(r"第\s*四\s*页|第四页|从第四页开始", t):
                 start_v = 30
+            area_v = ""
+            area_patterns = ["四川", "北京", "上海", "重庆", "广东", "湖北", "湖南", "江苏", "浙江", "福建", "云南", "贵州", "陕西", "甘肃", "青海", "辽宁", "吉林", "黑龙江", "河南", "河北", "山东", "山西", "安徽", "江西", "广西", "海南", "天津", "宁夏", "新疆", "内蒙古", "西藏"]
+            for ap in area_patterns:
+                if ap in t:
+                    area_v = ap
+                    break
             kw = re.sub(r"(帮我|请帮我|帮忙|给我|麻烦|我想|我需要|我要|请|收集|采集|获取|找|查找)", "", t)
             kw = re.sub(r"\d+\s*条(新闻|信息|数据|内容|记录)?", "", kw)
             kw = re.sub(r"(从第\s*[一二三四五六七八九十]\s*页开始|从第二页开始|从第三页开始|从第四页开始|第一页|第二页|第三页|第四页)", "", kw)
             kw = re.sub(r"(相关新闻|新闻|信息|数据|内容|记录|的|吧|呢|呀|啊)", "", kw)
             kw = kw.strip(" ，。！？,.")
-            return {"keyword": kw, "count": count_v, "start_page": start_v}
+            if not area_v:
+                area_v = "四川" if "雅安" in t else ""
+            return {"keyword": kw, "count": count_v, "start_page": start_v, "area_name": area_v, "word": kw}
 
         send("开始解析采集请求...")
         parsed = local_parse(prompt)
@@ -170,38 +180,71 @@ class PortalWatchCollectHandler(BaseHandler):
         keyword = (parsed.get("keyword") or "").strip()
         count = int(parsed.get("count") or item_count or 10)
         start = int(parsed.get("start_page") or start_page or 0)
+        area_name = (parsed.get("area_name") or area_name or "").strip()
+        word = (parsed.get("word") or word or keyword or "").strip()
         if not keyword:
             send("模型未提取到关键词，请重新输入更明确的采集请求")
             self.finish()
             return
-        send(f"解析结果：keyword={keyword}，count={count}，start_page={start}")
 
-        baidu = WatchtowerRepository.get_source_by_code("baidu_news", user_name=self.current_user)
-        if not baidu:
-            WatchtowerRepository.create_default_baidu_source(self.current_user)
-            baidu = WatchtowerRepository.get_source_by_code("baidu_news", user_name=self.current_user)
+        sources = WatchtowerRepository.list_sources(user_name=self.current_user)
+        source_map = {s.get("id"): s for s in sources}
+        has_area_source = any(source_map.get(sid, {}).get("source_code") == "area_news" for sid in selected_sources)
+        if not area_name and has_area_source:
+            area_name = "四川" if "雅安" in keyword else keyword
+        if has_area_source and not os.getenv("TIANAPI_AREA_NEWS_KEY", "").strip():
+            send("地区新闻 key 未配置，请检查 .env 中的 TIANAPI_AREA_NEWS_KEY")
+            self.finish()
+            return
+        send(f"解析结果：keyword={keyword}，count={count}，start_page={start}，area_name={area_name}，word={word}")
 
-        if not baidu:
-            send("未能初始化百度新闻采集源")
+        selected_source = None
+        for sid in selected_sources:
+            src = source_map.get(sid)
+            if not src:
+                continue
+            if src.get("source_code") == "area_news":
+                selected_source = src
+                break
+        if not selected_source:
+            for sid in selected_sources:
+                src = source_map.get(sid)
+                if src:
+                    selected_source = src
+                    break
+        if not selected_source:
+            send("未找到可用采集源，请先在采集源面板启用一个来源")
             self.finish()
             return
 
-        send(f"正在使用【{baidu['name']}】采集...")
+        send(f"正在使用【{selected_source['name']}】采集...")
         total_saved = 0
         records_buffer = []
-        page_step = int(baidu.get("page_step", 10) or 10)
+        page_step = int(selected_source.get("page_step", 10) or 10)
         max_rounds = max(8, (count + page_step - 1) // page_step + 8)
         round_idx = 0
         current_start = start
         while total_saved < count and round_idx < max_rounds:
             try:
-                result = WatchtowerRepository.collect(
-                    source_id=baidu["id"],
-                    keyword=keyword,
-                    start_page=current_start,
-                    item_count=min(page_step, count - total_saved),
-                    user_name=self.current_user,
-                )
+                if selected_source.get("source_code") == "area_news":
+                    send(f"地区新闻请求参数：areaname={area_name or keyword}，word={word or keyword}，page={max(1, current_start or 1)}")
+                    result = WatchtowerRepository.collect(
+                        source_id=selected_source["id"],
+                        keyword=keyword,
+                        start_page=current_start,
+                        item_count=min(page_step, count - total_saved),
+                        user_name=self.current_user,
+                        area_name=area_name or keyword,
+                        word=word or keyword,
+                    )
+                else:
+                    result = WatchtowerRepository.collect(
+                        source_id=selected_source["id"],
+                        keyword=keyword,
+                        start_page=current_start,
+                        item_count=min(page_step, count - total_saved),
+                        user_name=self.current_user,
+                    )
             except Exception as exc:
                 send(f"采集被拦截或失败：{exc}")
                 break
@@ -211,7 +254,7 @@ class PortalWatchCollectHandler(BaseHandler):
             records_buffer.extend(records)
             if records:
                 for item in records:
-                    send(item["title"])
+                    send(item.get("title", ""))
                     self.write(f"data: {json.dumps({'type': 'record', 'record': item}, ensure_ascii=False)}\n\n")
                     self.flush()
                 current_start += page_step
@@ -223,7 +266,6 @@ class PortalWatchCollectHandler(BaseHandler):
             send(f"当前关键词可用结果不足，实际新增 {total_saved} 条，目标 {count} 条")
         else:
             send(f"采集结束，共新增 {total_saved} 条")
-        self.finish()
         self.finish()
 
 

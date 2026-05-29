@@ -1,10 +1,22 @@
 import json
+import os
 import re
 import sqlite3
 import time
 from html import unescape
-from urllib.parse import quote, urljoin
+from pathlib import Path
+from urllib.parse import quote, urljoin, urlencode
 from urllib.request import Request, urlopen
+
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+    print(f"[env] watchtower TIANAPI_AREA_NEWS_KEY loaded={bool(os.getenv('TIANAPI_AREA_NEWS_KEY', '').strip())}")
+    print(f"[env] watchtower JUHE_HUABIAN_KEY loaded={bool(os.getenv('JUHE_HUABIAN_KEY', '').strip())}")
 
 from app.models.db import get_connection
 
@@ -124,11 +136,13 @@ class WatchtowerRepository:
             conn.execute("delete from watch_sources where id = ?", (source_id,))
 
     @staticmethod
-    def _build_url(source, keyword: str, start_page: int):
+    def _build_url(source, keyword: str, start_page: int, area_name: str = "", word: str = ""):
         """根据采集源配置动态构建URL"""
         entry_urls = json.loads(source.get("entry_urls_json", "[]"))
         page_param_name = source.get("page_param_name", "pn")
         page_step = source.get("page_step", 10)
+        if source.get("source_code") == "area_news":
+            return entry_urls[0] if entry_urls else "https://apis.tianapi.com/areanews/index"
         
         if start_page <= 0:
             url = entry_urls[0] if entry_urls else ""
@@ -148,12 +162,13 @@ class WatchtowerRepository:
         return url
 
     @staticmethod
-    def _fetch_html(url: str, headers_json: str = "{}"): 
+    def _fetch_html(url: str, headers_json: str = "{}", method: str = "GET", data: dict | None = None):
 
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept": "application/json, text/plain, */*",
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Content-Type": "application/x-www-form-urlencoded",
         }
         try:
             extra = json.loads(headers_json or "{}")
@@ -161,7 +176,10 @@ class WatchtowerRepository:
                 headers.update({str(k): str(v) for k, v in extra.items() if v is not None})
         except Exception:
             pass
-        req = Request(url, headers=headers)
+        body = None
+        if data is not None:
+            body = urlencode(data).encode("utf-8")
+        req = Request(url, data=body, headers=headers, method=method)
         with urlopen(req, timeout=30) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
         if "百度安全验证" in html or "安全验证" in html:
@@ -173,6 +191,10 @@ class WatchtowerRepository:
         """根据采集源配置动态解析内容"""
         parse_rules = json.loads(source.get("parse_rules_json", "{}"))
         base_url = source.get("base_url", "")
+        if source.get("source_code") == "area_news":
+            return WatchtowerRepository._parse_area_news_items(html, source)
+        if source.get("source_code") == "huabian_news":
+            return WatchtowerRepository._parse_huabian_news_items(html, source)
         
         # 使用配置的解析规则或默认规则
         patterns = parse_rules.get("title_patterns", [])
@@ -219,6 +241,54 @@ class WatchtowerRepository:
         return items
 
     @staticmethod
+    def _parse_area_news_items(html: str, source):
+        try:
+            payload = json.loads(html)
+        except Exception:
+            return []
+        if payload.get("code") not in (0, 200):
+            return []
+        result = payload.get("result") or {}
+        items = result.get("list") or []
+        rows = []
+        for item in items:
+            rows.append({
+                "id": item.get("id", ""),
+                "title": item.get("title", ""),
+                "pic": item.get("picUrl", ""),
+                "hot": "",
+                "time": item.get("ctime", ""),
+                "url": item.get("url", ""),
+                "mobileUrl": item.get("url", ""),
+                "description": item.get("description", ""),
+                "source": item.get("source", source.get("name", "")),
+            })
+        return rows
+
+    @staticmethod
+    def _parse_huabian_news_items(html: str, source):
+        try:
+            payload = json.loads(html)
+        except Exception:
+            return []
+        result = payload.get("result") or {}
+        items = result.get("newslist") or []
+        rows = []
+        for item in items:
+            rows.append({
+                "id": item.get("id", ""),
+                "title": item.get("title", ""),
+                "pic": item.get("picUrl", ""),
+                "hot": "",
+                "time": item.get("ctime", ""),
+                "url": item.get("url", ""),
+                "mobileUrl": item.get("url", ""),
+                "description": item.get("description", ""),
+                "source": item.get("source", source.get("name", "")),
+            })
+        return rows
+
+    @staticmethod
     def is_url_exists(url: str, user_name: str | None = None) -> bool:
         """检查URL是否已存在于数据库中（增量采集检测）"""
         with get_connection() as conn:
@@ -229,7 +299,7 @@ class WatchtowerRepository:
             return result is not None
 
     @staticmethod
-    def collect(source_id: int, keyword: str, start_page: int, item_count: int, incremental=True, user_name: str | None = None, delay_seconds: float = 1.0):
+    def collect(source_id: int, keyword: str, start_page: int, item_count: int, incremental=True, user_name: str | None = None, delay_seconds: float = 1.0, area_name: str = "", word: str = ""):
         """
         采集数据
         :param incremental: 是否启用增量采集（跳过已存在的URL）
@@ -238,16 +308,55 @@ class WatchtowerRepository:
         if not source:
             return {"records": [], "skipped": 0}
         
-        url = WatchtowerRepository._build_url(source, keyword, start_page)
-        html = WatchtowerRepository._fetch_html(url, source["headers_json"])
-        items = WatchtowerRepository._parse_items(html, source)
-        
         rows = []
         skipped = 0
+        source_code = source.get("source_code")
+        if source_code == "area_news":
+            api_key = os.getenv("TIANAPI_AREA_NEWS_KEY", "")
+            url = "https://apis.tianapi.com/areanews/index"
+            page_no = max(1, start_page or 1)
+            area_clean = (area_name or keyword).replace("省", "").replace("市", "")
+            queries = [
+                {"areaname": area_clean, "word": word or keyword},
+                {"areaname": area_clean, "word": ""},
+                {"areaname": "", "word": word or keyword},
+            ]
+            items = []
+            seen_ids = set()
+            for q in queries:
+                post_data = {"key": api_key, "areaname": q["areaname"], "word": q["word"], "page": page_no}
+                api_json = WatchtowerRepository._fetch_html(
+                    url,
+                    source["headers_json"],
+                    method="POST",
+                    data=post_data,
+                )
+                try:
+                    dbg = json.loads(api_json)
+                    print(f"[area_news] request={post_data} response_code={dbg.get('code')} msg={dbg.get('msg')}")
+                except Exception:
+                    print(f"[area_news] request={post_data} response={api_json[:300]}")
+                batch = WatchtowerRepository._parse_items(api_json, source)
+                for item in batch:
+                    item_id = item.get("id") or item.get("url") or item.get("title")
+                    if item_id in seen_ids:
+                        continue
+                    seen_ids.add(item_id)
+                    items.append(item)
+                if len(items) >= item_count:
+                    break
+        elif source_code == "huabian_news":
+            url = WatchtowerRepository._build_url(source, keyword, start_page)
+            api_json = WatchtowerRepository._fetch_html(url, source["headers_json"])
+            items = WatchtowerRepository._parse_items(api_json, source)
+        else:
+            url = WatchtowerRepository._build_url(source, keyword, start_page)
+            html = WatchtowerRepository._fetch_html(url, source["headers_json"])
+            items = WatchtowerRepository._parse_items(html, source)
         
         for idx, item in enumerate(items[: max(1, item_count)], start=1):
-            # 增量采集：检查URL是否已存在
-            if incremental and WatchtowerRepository.is_url_exists(item["url"], user_name=user_name):
+            item_url = item.get("url") or item.get("mobileUrl") or ""
+            if incremental and item_url and WatchtowerRepository.is_url_exists(item_url, user_name=user_name):
                 skipped += 1
                 continue
             rows.append(
@@ -255,10 +364,16 @@ class WatchtowerRepository:
                     "user_name": user_name or source.get("user_name", "") or "",
                     "source_id": source_id,
                     "source_name": source["name"],
-                    "keyword": keyword,
-                    "title": item["title"],
-                    "content": "",
-                    "url": item["url"],
+                    "keyword": word or keyword,
+                    "title": item.get("title", ""),
+                    "content": item.get("description", ""),
+                    "url": item_url,
+                    "source_url": item.get("url", ""),
+                    "publish_time": item.get("time", ""),
+                    "region": area_name or keyword,
+                    "school": "",
+                    "category": "",
+                    "view_count": item.get("hot", ""),
                 }
             )
             if delay_seconds and delay_seconds > 0:
@@ -273,22 +388,31 @@ class WatchtowerRepository:
         with get_connection() as conn:
             count = 0
             for record in records:
-                # 再次检查避免竞态条件
-                exists = conn.execute("select id from watch_records where url = ? and user_name = ?", (record["url"], record.get("user_name", ""))).fetchone()
+                record_url = record.get("url", "") or record.get("source_url", "")
+                exists = conn.execute(
+                    "select id from watch_records where url = ? and user_name = ?",
+                    (record_url, record.get("user_name", "")),
+                ).fetchone()
                 if not exists:
                     conn.execute(
                         """
-                        insert into watch_records(user_name, source_id, source_name, keyword, title, content, url)
-                        values(?,?,?,?,?,?,?)
+                        insert into watch_records(user_name, source_id, source_name, keyword, title, content, url, source_url, publish_time, region, school, category, view_count)
+                        values(?,?,?,?,?,?,?,?,?,?,?,?,?)
                         """,
                         (
                             record.get("user_name", ""),
-                            record["source_id"],
-                            record["source_name"],
-                            record["keyword"],
-                            record["title"],
-                            record["content"],
-                            record["url"],
+                            record.get("source_id", 0),
+                            record.get("source_name", ""),
+                            record.get("keyword", ""),
+                            record.get("title", ""),
+                            record.get("content", ""),
+                            record_url,
+                            record.get("source_url", record_url),
+                            record.get("publish_time", ""),
+                            record.get("region", ""),
+                            record.get("school", ""),
+                            record.get("category", ""),
+                            str(record.get("view_count", "")),
                         ),
                     )
                     count += 1
@@ -366,10 +490,11 @@ class WatchtowerRepository:
                 conn.execute(f"delete from watch_records where id in ({placeholders})", ids)
 
     @staticmethod
-    def init_default_sources():
+    def init_default_sources(user_name: str | None = None):
         """初始化默认采集源"""
         sources = [
             {
+                "user_name": user_name or "",
                 "name": "百度新闻",
                 "source_code": "baidu_news",
                 "entry_urls": [
@@ -387,6 +512,49 @@ class WatchtowerRepository:
                 "base_url": "https://www.baidu.com"
             },
             {
+                "user_name": user_name or "",
+                "name": "地区新闻",
+                "source_code": "area_news",
+                "entry_urls": [
+                    "https://apis.tianapi.com/areanews/index?key={key}&areaname={地区名}&page={分页步进}&word={关键词}"
+                ],
+                "headers": {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                "keywords_label": "关键词",
+                "page_param_name": "page",
+                "page_step": 1,
+                "collect_limit": 10,
+                "is_enabled": 1,
+                "note": "天行数据地区新闻接口",
+                "parse_rules": {
+                    "json_path": "result.list"
+                },
+                "base_url": "https://apis.tianapi.com"
+            },
+            {
+                "user_name": user_name or "",
+                "name": "娱乐新闻",
+                "source_code": "huabian_news",
+                "entry_urls": [
+                    "https://apis.juhe.cn/fapigx/huabian/query?key={key}&num={num}&page={分页步进}&rand={rand}&word={关键词}"
+                ],
+                "headers": {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                "keywords_label": "关键词",
+                "page_param_name": "page",
+                "page_step": 1,
+                "collect_limit": 10,
+                "is_enabled": 1,
+                "note": "聚合平台娱乐新闻接口",
+                "parse_rules": {
+                    "json_path": "result.newslist"
+                },
+                "base_url": "https://apis.juhe.cn"
+            },
+            {
+                "user_name": user_name or "",
                 "name": "新浪新闻",
                 "source_code": "sina_news",
                 "entry_urls": [

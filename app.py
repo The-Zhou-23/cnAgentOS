@@ -1,8 +1,20 @@
 # 程序的主入口
 import os
+from pathlib import Path
+
 import tornado.ioloop
 import tornado.web
 from tornado.httpserver import HTTPServer
+
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+    print(f"[env] TIANAPI_AREA_NEWS_KEY loaded={bool(os.getenv('TIANAPI_AREA_NEWS_KEY', '').strip())}")
+    print(f"[env] JUHE_HUABIAN_KEY loaded={bool(os.getenv('JUHE_HUABIAN_KEY', '').strip())}")
 
 from app.controllers.admin import (
     AdminFeatureListHandler,

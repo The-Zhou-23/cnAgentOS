@@ -28,7 +28,7 @@
 <div class="db-hero">
   <div class="badge-soft mb-2">用户端数据仓库</div>
   <h1>我的采集数据库</h1>
-  <p>这里展示你通过智能瞭望采集到的数据，默认每页 10 条。你可以按来源筛选、删除单条记录，或批量删除选中的记录。</p>
+  <p>这里展示你通过智能瞭望采集到的数据，默认每页 10 条。你可以按来源筛选、删除单条记录，或批量删除选中的记录；并支持查看结构化字段如地区、学校、分类和发布时间。</p>
 </div>
 
 <div class="glass-strong" style="padding:18px 20px; border-radius:24px;">
@@ -62,6 +62,11 @@
               <span class="tag">{{ record['source_name'] }}</span>
               <span>{{ record['created_at'] }}</span>
               <span>关键词：{{ record['keyword'] }}</span>
+              <span>地区：{{ record['region'] }}</span>
+              <span>学校：{{ record['school'] }}</span>
+              <span>分类：{{ record['category'] }}</span>
+              <span>发布时间：{{ record['publish_time'] }}</span>
+              <span>浏览量：{{ record['view_count'] }}</span>
             </div>
             <h4>{{ record['title'] }}</h4>
             <div class="db-meta">
