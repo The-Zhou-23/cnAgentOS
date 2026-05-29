@@ -47,6 +47,7 @@
     </form>
     <div id="sqlBox" class="sql-box">SQL 会显示在这里</div>
     <div id="outputBox" class="output-box">等待提问...</div>
+    <div id="tableWrap" style="margin-top:16px;"></div>
   </div>
 
   <div class="query-card">
@@ -71,19 +72,33 @@
 const queryForm = document.getElementById('queryForm');
 const sqlBox = document.getElementById('sqlBox');
 const outputBox = document.getElementById('outputBox');
+const tableWrap = document.getElementById('tableWrap');
+function renderTable(rows) {
+  if (!rows || !rows.length) {
+    tableWrap.innerHTML = '<div class="meta-item">暂无结构化结果</div>';
+    return;
+  }
+  const cols = Array.from(new Set(rows.flatMap(r => Object.keys(r))));
+  const head = cols.map(c => `<th style="text-align:left;padding:10px;border-bottom:1px solid #e5e7eb;">${c}</th>`).join('');
+  const body = rows.map(r => `<tr>${cols.map(c => `<td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;word-break:break-all;">${r[c] ?? ''}</td>`).join('')}</tr>`).join('');
+  tableWrap.innerHTML = `<div class="meta-item" style="overflow:auto;"><h4>结构化结果</h4><table style="width:100%;border-collapse:collapse;min-width:720px;"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
 queryForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   outputBox.textContent = '正在生成 SQL 并查询...';
   sqlBox.textContent = '生成中...';
+  tableWrap.innerHTML = '';
   const resp = await fetch('/portal/query/ask', { method: 'POST', body: new FormData(queryForm) });
   const data = await resp.json().catch(() => null);
   if (!data || !data.ok) {
     outputBox.textContent = data?.error || '问数失败';
     sqlBox.textContent = data?.sql || '';
+    tableWrap.innerHTML = '';
     return;
   }
   sqlBox.textContent = data.sql || '';
-  outputBox.textContent = `回答：${data.answer}\n\n结果：\n${JSON.stringify(data.rows, null, 2)}`;
+  outputBox.textContent = `回答：${data.answer}\n\n结果条数：${data.rows?.length || 0}`;
+  renderTable(data.rows || []);
 });
 </script>
 {% end %}
