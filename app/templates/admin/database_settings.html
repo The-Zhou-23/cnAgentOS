@@ -10,18 +10,49 @@
     <style>
         .db-card {
             border: 2px solid transparent;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 20px;
+            padding: 28px 24px;
             cursor: pointer;
             transition: all 0.2s ease;
+            background: #fff;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
         }
         .db-card:hover {
-            border-color: var(--primary);
+            border-color: rgba(37, 99, 235, 0.35);
             background: rgba(37, 99, 235, 0.03);
+            transform: translateY(-1px);
         }
         .db-card.selected {
             border-color: var(--primary);
-            background: rgba(37, 99, 235, 0.08);
+            background: linear-gradient(180deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0.05));
+            box-shadow: 0 16px 40px rgba(37, 99, 235, 0.18);
+            transform: translateY(-1px);
+        }
+        .db-card.selected::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: var(--primary);
+            border-radius: 18px 0 0 18px;
+            z-index: 2;
+        }
+        .db-card.selected::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22), inset 0 0 0 4px rgba(37, 99, 235, 0.08);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .db-card.selected .db-icon {
+            color: var(--primary);
+            transform: scale(1.05);
         }
         .db-card input[type="radio"] {
             display: none;
@@ -33,51 +64,69 @@
         .btn-test {
             margin-right: 8px;
         }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+        .form-actions .btn {
+            min-width: 140px;
+        }
     </style>
 </head>
 <body class="admin-shell">
-    <div class="page-shell">
-        {% set active_page = 'database_settings' %}
-        {% include "_sidebar.html" %}
+<div class="page-shell">
+    {% set active_page = 'database' %}
+    {% include "_sidebar.html" %}
 
-        <main class="main">
-            <div class="topbar">
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <h1 class="title-large">数据库配置</h1>
+                <div class="subtitle">管理数据库连接，支持 SQLite 和 MySQL 切换</div>
+            </div>
+            <div class="badge-soft"><i class="fas fa-user me-2"></i>{{ username }}</div>
+        </div>
+
+        <div class="glass-strong card-soft mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
                 <div>
-                    <div class="kicker"><i class="fas fa-database me-2"></i>系统管理</div>
-                    <h1 class="title-large mb-0">数据库配置</h1>
-                    <div class="subtitle">管理数据库连接，支持 SQLite 和 MySQL 切换</div>
+                    <div class="badge-soft mb-2">当前模式</div>
+                    <div class="fw-semibold">{{ 'SQLite' if current_db_type == 'sqlite' else 'MySQL' }}</div>
                 </div>
-                <span class="badge-soft"><i class="fas fa-user me-2"></i>{{ username }}</span>
+                <div class="text-secondary small">可按需切换并测试连接</div>
             </div>
-
-            <div class="card">
-                <h3><i class="fas fa-server"></i> 选择数据库类型</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="db-card w-100" {% if current_db_type == 'sqlite' %}class="db-card w-100 selected"{% end %}>
-                            <input type="radio" name="db_type" value="sqlite" {% if current_db_type == 'sqlite' %}checked{% end %} />
-                            <div class="text-center">
-                                <div class="db-icon text-secondary"><i class="fas fa-database"></i></div>
-                                <h4>SQLite</h4>
-                                <p class="text-muted text-sm">轻量级嵌入式数据库，适合开发和小型部署</p>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="db-card w-100" {% if current_db_type == 'mysql' %}class="db-card w-100 selected"{% end %}>
-                            <input type="radio" name="db_type" value="mysql" {% if current_db_type == 'mysql' %}checked{% end %} />
-                            <div class="text-center">
-                                <div class="db-icon text-orange"><i class="fab fa-mysql"></i></div>
-                                <h4>MySQL</h4>
-                                <p class="text-muted text-sm">高性能关系型数据库，适合生产环境</p>
-                            </div>
-                        </label>
-                    </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="db-card w-100 {% if current_db_type == 'sqlite' %}selected{% end %}">
+                        <input type="radio" name="db_type" value="sqlite" {% if current_db_type == 'sqlite' %}checked{% end %} />
+                        <div class="text-center">
+                            <div class="db-icon text-secondary"><i class="fas fa-database"></i></div>
+                            <h4>SQLite</h4>
+                            <p class="text-muted text-sm mb-0">轻量级嵌入式数据库，适合开发和小型部署</p>
+                        </div>
+                    </label>
+                </div>
+                <div class="col-md-6">
+                    <label class="db-card w-100 {% if current_db_type == 'mysql' %}selected{% end %}">
+                        <input type="radio" name="db_type" value="mysql" {% if current_db_type == 'mysql' %}checked{% end %} />
+                        <div class="text-center">
+                            <div class="db-icon text-orange"><i class="fab fa-mysql"></i></div>
+                            <h4>MySQL</h4>
+                            <p class="text-muted text-sm mb-0">高性能关系型数据库，适合生产环境</p>
+                        </div>
+                    </label>
                 </div>
             </div>
+        </div>
 
-            <div class="card">
-                <h3><i class="fas fa-cog"></i> MySQL 连接配置</h3>
+            <div class="card" style="padding: 28px;">
+                <h3 class="mb-3"><i class="fas fa-cog"></i> MySQL 连接配置</h3>
+                <p class="text-secondary mb-4">仅当切换到 MySQL 时需要填写这些信息，SQLite 模式下可保留默认值。</p>
                 <form id="dbConfigForm">
                     {% module xsrf_form_html() %}
                     <div class="row">
@@ -91,7 +140,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row g-3">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>主机地址</label>
@@ -138,8 +187,8 @@
                 </form>
             </div>
 
-            <div class="card">
-                <h3><i class="fas fa-info-circle"></i> 当前状态</h3>
+            <div class="card" style="padding: 28px;">
+                <h3 class="mb-3"><i class="fas fa-info-circle"></i> 当前状态</h3>
                 <div class="alert alert-info">
                     <strong>当前数据库:</strong> {{ 'SQLite' if current_db_type == 'sqlite' else 'MySQL' }}
                     <br />
@@ -151,6 +200,24 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const dbTypeSelect = document.querySelector('select[name="db_type"]');
+            const dbCards = document.querySelectorAll('.db-card');
+            const syncDbSelection = (value) => {
+                dbCards.forEach(card => {
+                    const radio = card.querySelector('input[type="radio"]');
+                    const isActive = radio && radio.value === value;
+                    if (radio) radio.checked = isActive;
+                    card.classList.toggle('selected', isActive);
+                });
+            };
+
+            if (dbTypeSelect) {
+                syncDbSelection(dbTypeSelect.value);
+                dbTypeSelect.addEventListener('change', function() {
+                    syncDbSelection(this.value);
+                });
+            }
+
             // 测试连接
             document.getElementById('testConnection').addEventListener('click', async function() {
                 const btn = this;
@@ -216,14 +283,12 @@
             document.querySelectorAll('.db-card').forEach(card => {
                 card.addEventListener('click', function() {
                     const radio = this.querySelector('input[type="radio"]');
+                    if (!radio) return;
                     radio.checked = true;
-                    
-                    // 更新select的值
-                    document.querySelector('select[name="db_type"]').value = radio.value;
-                    
-                    // 更新选中状态
-                    document.querySelectorAll('.db-card').forEach(c => c.classList.remove('selected'));
-                    this.classList.add('selected');
+                    if (dbTypeSelect) {
+                        dbTypeSelect.value = radio.value;
+                    }
+                    syncDbSelection(radio.value);
                 });
             });
         });

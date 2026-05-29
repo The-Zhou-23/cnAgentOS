@@ -24,7 +24,8 @@ class AdminDatabaseSettingsHandler(AdminBaseHandler):
             username=self.current_user,
             current_db_type=current_db_type,
             db_types=[DB_TYPE_SQLITE, DB_TYPE_MYSQL],
-            mysql_config=config["mysql"]
+            mysql_config=config["mysql"],
+            active_page="database"
         )
 
 

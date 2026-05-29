@@ -3,12 +3,14 @@
     <strong>cnAgentOS</strong>
     <span>AI 智能瞭望与智能问数系统</span>
   </div>
+  {% set current_nav = active_page or request.path.rstrip('/') %}
   <div class="nav-card">
     {% if sidebar_features %}
       {% for item in sidebar_features %}
+      {% set item_key = item['active_page'] or item['route_path'].rstrip('/') %}
       <a
         href="{{ item['route_path'] }}"
-        class="{% if active_page == item['active_page'] %}active{% end %}"
+        class="{% if current_nav == item_key or current_nav == item['route_path'] or current_nav == item['name'] or current_nav == item_key.replace('feature.', '') %}active{% end %}"
         ><i class="{{ item['icon'] }}"></i>{{ item['name'] }}</a
       >
       {% end %}
