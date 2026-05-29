@@ -108,6 +108,7 @@
 
       <div class="watch-actions">
         <button type="submit" class="btn-watch btn-watch-primary">开始采集</button>
+        <button type="button" id="askBtn" class="btn-watch btn-watch-primary" style="background: linear-gradient(135deg, #2563eb, #7c3aed);">智能问数</button>
         <button type="reset" class="btn-watch btn-watch-ghost">清空</button>
       </div>
     </form>
@@ -119,6 +120,7 @@
 const form = document.getElementById('watchForm');
 const streamBox = document.getElementById('streamBox');
 const sourceGrid = document.getElementById('sourceGrid');
+const askBtn = document.getElementById('askBtn');
 sourceGrid?.addEventListener('change', (e) => {
   const label = e.target.closest('.toggle-chip');
   if (label) label.classList.toggle('active', e.target.checked);
@@ -126,19 +128,8 @@ sourceGrid?.addEventListener('change', (e) => {
 const areaNameInput = document.getElementById('areaNameInput');
 const wordInput = document.getElementById('wordInput');
 const regionInput = document.getElementById('regionInput');
-form?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (areaNameInput) areaNameInput.value = '';
-  if (wordInput) wordInput.value = '';
-  if (regionInput) regionInput.value = '';
-  const checked = Array.from(document.querySelectorAll('input[name="source_ids"]:checked')).map(x => x.value);
-  if (!checked.length) {
-    const first = document.querySelector('input[name="source_ids"]');
-    if (first) first.checked = true;
-    if (first?.closest('.toggle-chip')) first.closest('.toggle-chip').classList.add('active');
-  }
-  streamBox.textContent = '开始采集...\n';
-  const resp = await fetch('/user/watch/collect', { method: 'POST', body: new FormData(form) });
+
+async function readStream(resp) {
   if (!resp.ok || !resp.body) { streamBox.textContent += '请求失败'; return; }
   const reader = resp.body.getReader();
   const decoder = new TextDecoder('utf-8');
@@ -158,6 +149,35 @@ form?.addEventListener('submit', async (e) => {
       } catch (err) {}
     }
   }
+}
+
+form?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (areaNameInput) areaNameInput.value = '';
+  if (wordInput) wordInput.value = '';
+  if (regionInput) regionInput.value = '';
+  const checked = Array.from(document.querySelectorAll('input[name="source_ids"]:checked')).map(x => x.value);
+  if (!checked.length) {
+    const first = document.querySelector('input[name="source_ids"]');
+    if (first) first.checked = true;
+    if (first?.closest('.toggle-chip')) first.closest('.toggle-chip').classList.add('active');
+  }
+  streamBox.textContent = '开始采集...\n';
+  const resp = await fetch('/user/watch/collect', { method: 'POST', body: new FormData(form) });
+  await readStream(resp);
+});
+
+askBtn?.addEventListener('click', async () => {
+  const question = prompt('请输入智能问数问题，例如：最近7天雅安新闻有多少条？');
+  if (!question) return;
+  streamBox.textContent = '开始问数...\n';
+  const fd = new FormData();
+  fd.append('_xsrf', document.querySelector('input[name="_xsrf"]')?.value || '');
+  fd.append('question', question);
+  const resp = await fetch('/user/watch/ask', { method: 'POST', body: fd });
+  const data = await resp.json().catch(() => null);
+  if (!data || !data.ok) { streamBox.textContent += (data?.error || '问数失败'); return; }
+  streamBox.textContent += `SQL:\n${data.sql}\n\n结果条数: ${data.rows.length}\n\n回答:\n${data.answer}\n`;
 });
 </script>
 {% end %}

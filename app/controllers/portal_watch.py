@@ -9,6 +9,7 @@ import os
 import tornado.web
 
 from app.controllers.base import BaseHandler
+from app.models.db import get_connection
 from app.models.model_service import ModelServiceRepository
 from app.models.watchtower import WatchtowerRepository
 
@@ -181,7 +182,7 @@ class PortalWatchCollectHandler(BaseHandler):
         count = int(parsed.get("count") or item_count or 10)
         start = int(parsed.get("start_page") or start_page or 0)
         area_name = (parsed.get("area_name") or area_name or "").strip()
-        word = (parsed.get("word") or word or keyword or "").strip()
+        word = (parsed.get("word") or word or "").strip()
         if not keyword:
             send("模型未提取到关键词，请重新输入更明确的采集请求")
             self.finish()
@@ -192,6 +193,11 @@ class PortalWatchCollectHandler(BaseHandler):
         has_area_source = any(source_map.get(sid, {}).get("source_code") == "area_news" for sid in selected_sources)
         if not area_name and has_area_source:
             area_name = "四川" if "雅安" in keyword else keyword
+        if has_area_source and word and word == area_name:
+            word = ""
+        # 只有省市名时，word 保持为空
+        if has_area_source and keyword and keyword == area_name:
+            word = ""
         if has_area_source and not os.getenv("TIANAPI_AREA_NEWS_KEY", "").strip():
             send("地区新闻 key 未配置，请检查 .env 中的 TIANAPI_AREA_NEWS_KEY")
             self.finish()
@@ -221,21 +227,23 @@ class PortalWatchCollectHandler(BaseHandler):
         total_saved = 0
         records_buffer = []
         page_step = int(selected_source.get("page_step", 10) or 10)
-        max_rounds = max(8, (count + page_step - 1) // page_step + 8)
+        max_rounds = max(3, (count + page_step - 1) // page_step + 2)
         round_idx = 0
         current_start = start
         while total_saved < count and round_idx < max_rounds:
             try:
                 if selected_source.get("source_code") == "area_news":
-                    send(f"地区新闻请求参数：areaname={area_name or keyword}，word={word or keyword}，page={max(1, current_start or 1)}")
+                    area_value = area_name or keyword
+                    word_value = word or ""
+                    send(f"地区新闻请求参数：areaname={area_value}，word={word_value}，page={max(1, current_start or 1)}")
                     result = WatchtowerRepository.collect(
                         source_id=selected_source["id"],
                         keyword=keyword,
                         start_page=current_start,
                         item_count=min(page_step, count - total_saved),
                         user_name=self.current_user,
-                        area_name=area_name or keyword,
-                        word=word or keyword,
+                        area_name=area_value,
+                        word=word_value,
                     )
                 else:
                     result = WatchtowerRepository.collect(
@@ -262,11 +270,94 @@ class PortalWatchCollectHandler(BaseHandler):
                 continue
             current_start += page_step
             round_idx += 1
+            if selected_source.get("source_code") == "area_news" and not records:
+                break
         if total_saved < count:
             send(f"当前关键词可用结果不足，实际新增 {total_saved} 条，目标 {count} 条")
         else:
             send(f"采集结束，共新增 {total_saved} 条")
         self.finish()
+
+
+class PortalWatchAskHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        question = (self.get_body_argument("question", "") or "").strip()
+        if not question:
+            self.set_status(400)
+            self.write({"ok": False, "error": "请输入问题"})
+            return
+        model = ModelServiceRepository.get_system_model()
+        if not model:
+            self.set_status(400)
+            self.write({"ok": False, "error": "未找到默认模型"})
+            return
+
+        schema_prompt = """
+你是 SQLite SQL 生成助手。
+只允许生成单条 SELECT 语句。
+禁止输出解释、禁止多语句、禁止写入操作。
+只能查询 watch_records 表。
+如果用户问题涉及时间，优先使用 created_at 或 publish_time。
+如果用户问题涉及地区，优先使用 region。
+如果用户问题涉及来源，优先使用 source_name。
+如果用户问题涉及关键词，优先使用 keyword 或 title。
+如果没有指定数量，默认 LIMIT 20。
+请只返回 SQL，不要返回其他内容。
+
+表结构：
+- id: 自增ID
+- user_name: 用户名
+- source_id: 来源ID
+- source_name: 新闻来源
+- keyword: 采集关键词
+- title: 标题
+- content: 内容摘要
+- url: 原文链接
+- source_url: 来源链接
+- publish_time: 发布时间
+- region: 地区
+- school: 学校
+- category: 分类
+- view_count: 浏览量
+- created_at: 入库时间
+"""
+        try:
+            raw_sql = ModelServiceRepository.chat(model["id"], [
+                {"role": "system", "content": schema_prompt},
+                {"role": "user", "content": question},
+            ])
+        except Exception as exc:
+            self.set_status(500)
+            self.write({"ok": False, "error": f"SQL生成失败: {exc}"})
+            return
+
+        sql = raw_sql.strip()
+        if sql.startswith("```"):
+            sql = sql.strip("`")
+            if "\n" in sql:
+                sql = sql.split("\n", 1)[1]
+            sql = sql.rsplit("\n", 1)[0] if sql.endswith("```") else sql
+        banned = ["insert", "update", "delete", "drop", "alter", "create", "attach", "pragma"]
+        sql_lower = sql.lower().strip()
+        if not sql_lower.startswith("select") or any(word in sql_lower for word in banned) or sql_lower.count(";") > 0 or "watch_records" not in sql_lower:
+            self.set_status(400)
+            self.write({"ok": False, "error": "生成的SQL不安全", "sql": sql})
+            return
+        if "limit" not in sql_lower:
+            sql = sql.rstrip(";") + " LIMIT 20"
+        try:
+            with get_connection() as conn:
+                conn.row_factory = None
+                rows = conn.execute(sql).fetchall()
+            result_rows = [dict(row) if hasattr(row, "keys") else list(row) for row in rows]
+        except Exception as exc:
+            self.set_status(500)
+            self.write({"ok": False, "error": f"SQL执行失败: {exc}", "sql": sql})
+            return
+
+        answer = f"共查询到 {len(result_rows)} 条结果。"
+        self.write({"ok": True, "sql": sql, "rows": result_rows, "answer": answer})
 
 
 class PortalWatchDeleteHandler(BaseHandler):

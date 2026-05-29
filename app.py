@@ -65,8 +65,8 @@ from app.controllers.auth import LoginHandler, LogoutHandler, RegisterHandler
 from app.controllers.home import IndexHandler
 from app.controllers._temp_a_portal_stubs import (
     TempPortalDigitalEmployeeHandler,
-    TempPortalQueryHandler,
 )
+from app.controllers.portal_query import PortalQueryAskHandler, PortalQueryHandler
 from app.controllers.portal_watch import PortalWatchBatchDeleteHandler, PortalWatchCollectHandler, PortalWatchDatabaseHandler, PortalWatchDeleteHandler, PortalWatchListHandler
 from app.controllers.portal_chat import (
     PortalChatApiHandler,
@@ -119,8 +119,9 @@ def make_app():
             (r"/auth/login", LoginHandler),
             (r"/auth/register", RegisterHandler),
             (r"/auth/logout", LogoutHandler),
-            # 【临时路由 - 成员 A】待 D/E 实现正式页面后删除
-            (r"/portal/query", TempPortalQueryHandler),
+            # 成员 E：智能问数路由
+            (r"/portal/query", PortalQueryHandler),
+            (r"/portal/query/ask", PortalQueryAskHandler),
             # 成员 C：智能瞭望用户侧路由
             (r"/user/watch", PortalWatchListHandler),
             (r"/user/watch/database", PortalWatchDatabaseHandler),

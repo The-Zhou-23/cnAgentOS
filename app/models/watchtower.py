@@ -316,11 +316,10 @@ class WatchtowerRepository:
             url = "https://apis.tianapi.com/areanews/index"
             page_no = max(1, start_page or 1)
             area_clean = (area_name or keyword).replace("省", "").replace("市", "")
-            queries = [
-                {"areaname": area_clean, "word": word or keyword},
-                {"areaname": area_clean, "word": ""},
-                {"areaname": "", "word": word or keyword},
-            ]
+            word_clean = (word or "").strip()
+            queries = [{"areaname": area_clean, "word": word_clean}]
+            if not word_clean:
+                queries.append({"areaname": area_clean, "word": ""})
             items = []
             seen_ids = set()
             for q in queries:
@@ -343,7 +342,7 @@ class WatchtowerRepository:
                         continue
                     seen_ids.add(item_id)
                     items.append(item)
-                if len(items) >= item_count:
+                if len(items) >= item_count or batch:
                     break
         elif source_code == "huabian_news":
             url = WatchtowerRepository._build_url(source, keyword, start_page)
