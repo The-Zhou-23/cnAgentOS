@@ -224,9 +224,22 @@ class ModelServiceRepository:
 
     @staticmethod
     def chat(model_id: int, messages: list[dict], stream: bool = False):
-        _, request = ModelServiceRepository._build_request(model_id, messages, stream=stream)
-        with urlopen(request, timeout=120) as resp:
-            return resp.read().decode("utf-8", errors="ignore")
+        model, request = ModelServiceRepository._build_request(model_id, messages, stream=stream)
+        try:
+            with urlopen(request, timeout=120) as resp:
+                response_text = resp.read().decode("utf-8", errors="ignore")
+                status = getattr(resp, "status", 200)
+                if status >= 400:
+                    raise RuntimeError(f"模型 API 返回 HTTP {status}: {response_text[:500]}")
+                return response_text
+        except HTTPError as exc:
+            try:
+                detail = exc.read().decode("utf-8", errors="ignore")[:500]
+            except Exception:
+                detail = str(exc)
+            raise RuntimeError(f"模型 API 请求失败 HTTP {exc.code}: {detail}")
+        except URLError as exc:
+            raise RuntimeError(f"无法连接模型服务 ({model.get('base_url', '')}): {exc.reason}")
 
     @staticmethod
     def stream_chat(model_id: int, messages: list[dict]):

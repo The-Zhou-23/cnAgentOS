@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import re
 import sqlite3
 import time
@@ -141,19 +142,20 @@ class WatchtowerRepository:
         entry_urls = json.loads(source.get("entry_urls_json", "[]"))
         page_param_name = source.get("page_param_name", "pn")
         page_step = source.get("page_step", 10)
-        if source.get("source_code") == "area_news":
+        source_code = source.get("source_code", "")
+        if source_code == "area_news":
             return entry_urls[0] if entry_urls else "https://apis.tianapi.com/areanews/index"
+        if source_code == "huabian_news":
+            return entry_urls[0] if entry_urls else "https://apis.juhe.cn/fapigx/huabian/query"
         
         if start_page <= 0:
             url = entry_urls[0] if entry_urls else ""
         else:
             url = entry_urls[1] if len(entry_urls) > 1 else entry_urls[0] if entry_urls else ""
         
-        # 替换关键字
         keyword_label = source.get("keywords_label", "关键字")
         url = url.replace("{" + keyword_label + "}", quote(keyword, safe=""))
         
-        # 替换分页参数
         if start_page > 0 and page_param_name:
             page_value = (start_page - 1) * page_step
             url = url.replace("{分页步进}", str(page_value))
@@ -271,6 +273,8 @@ class WatchtowerRepository:
             payload = json.loads(html)
         except Exception:
             return []
+        if payload.get("error_code") != 0:
+            return []
         result = payload.get("result") or {}
         items = result.get("newslist") or []
         rows = []
@@ -345,9 +349,42 @@ class WatchtowerRepository:
                 if len(items) >= item_count or batch:
                     break
         elif source_code == "huabian_news":
-            url = WatchtowerRepository._build_url(source, keyword, start_page)
-            api_json = WatchtowerRepository._fetch_html(url, source["headers_json"])
+            api_key = os.getenv("JUHE_HUABIAN_KEY", "")
+            url = "https://apis.juhe.cn/fapigx/huabian/query"
+            page_no = max(1, start_page or 1)
+            post_data = {
+                "key": api_key,
+                "num": item_count,
+                "page": page_no,
+                "rand": random.randint(1, 9999),
+                "word": keyword,
+            }
+            api_json = WatchtowerRepository._fetch_html(
+                url,
+                source["headers_json"],
+                method="POST",
+                data=post_data,
+            )
+            try:
+                dbg = json.loads(api_json)
+                print(f"[huabian_news] request={post_data} response_code={dbg.get('reason')} msg={dbg.get('resultcode')}")
+            except Exception:
+                print(f"[huabian_news] request={post_data} response={api_json[:300]}")
             items = WatchtowerRepository._parse_items(api_json, source)
+            if len(items) < item_count:
+                post_data["page"] = page_no + 1
+                api_json2 = WatchtowerRepository._fetch_html(
+                    url,
+                    source["headers_json"],
+                    method="POST",
+                    data=post_data,
+                )
+                items2 = WatchtowerRepository._parse_items(api_json2, source)
+                seen_ids = {item.get("id") or item.get("url") or item.get("title") for item in items}
+                for item in items2:
+                    item_id = item.get("id") or item.get("url") or item.get("title")
+                    if item_id not in seen_ids:
+                        items.append(item)
         else:
             url = WatchtowerRepository._build_url(source, keyword, start_page)
             html = WatchtowerRepository._fetch_html(url, source["headers_json"])
