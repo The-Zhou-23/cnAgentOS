@@ -33,7 +33,7 @@
 
 <div class="glass-strong" style="padding:18px 20px; border-radius:24px;">
   <div class="db-toolbar">
-    <form class="db-filter" method="get" action="/user/watch/database">
+    <form class="db-filter" method="get" action="/portal/watch/database">
       <input type="text" name="keyword" placeholder="按关键词筛选" value="{{ keyword }}">
       <select name="source_name">
         <option value="">全部来源</option>
@@ -43,14 +43,14 @@
       </select>
       <button class="btn btn-primary" type="submit">筛选</button>
     </form>
-    <form method="post" action="/user/watch/batch-delete" id="dbBatchForm">
+    <form method="post" action="/portal/watch/batch-delete" id="dbBatchForm">
       {% module xsrf_form_html() %}
       <button class="btn btn-outline-danger" type="button" id="dbCheckAll">全选</button>
       <button class="btn btn-danger" type="button" id="dbBatchDelete">批量删除</button>
     </form>
   </div>
 
-  <form method="post" action="/user/watch/batch-delete" id="dbRecordsForm">
+  <form method="post" action="/portal/watch/batch-delete" id="dbRecordsForm">
     {% module xsrf_form_html() %}
     {% if records %}
       {% for record in records %}
@@ -73,7 +73,7 @@
               <span style="word-break: break-all;">{{ record['url'] }}</span>
             </div>
             <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-outline-danger btn-sm db-del-one" type="button" data-delete-url="/user/watch/delete/{{ record['id'] }}">删除</button>
+              <button class="btn btn-outline-danger btn-sm db-del-one" type="button" data-delete-url="/portal/watch/delete/{{ record['id'] }}">删除</button>
             </div>
           </div>
         </div>
@@ -85,9 +85,9 @@
   </form>
 
   <div class="db-pagination">
-    {% if has_prev %}<a href="/user/watch/database?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_name %}&source_name={{ source_name }}{% end %}">上一页</a>{% else %}<span class="disabled">上一页</span>{% end %}
+    {% if has_prev %}<a href="/portal/watch/database?page={{ page - 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_name %}&source_name={{ source_name }}{% end %}">上一页</a>{% else %}<span class="disabled">上一页</span>{% end %}
     <span>第 {{ page }} / {{ total_pages }} 页</span>
-    {% if has_next %}<a href="/user/watch/database?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_name %}&source_name={{ source_name }}{% end %}">下一页</a>{% else %}<span class="disabled">下一页</span>{% end %}
+    {% if has_next %}<a href="/portal/watch/database?page={{ page + 1 }}{% if keyword %}&keyword={{ keyword }}{% end %}{% if source_name %}&source_name={{ source_name }}{% end %}">下一页</a>{% else %}<span class="disabled">下一页</span>{% end %}
   </div>
 </div>
 

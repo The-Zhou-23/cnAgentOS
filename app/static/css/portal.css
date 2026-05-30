@@ -333,7 +333,17 @@ body {
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
+  line-height: 1;
+  flex: 0 0 auto;
+  white-space: nowrap;
   transition: 0.2s ease;
+}
+
+.portal-nav a i {
+  display: inline-block;
+  min-width: 1em;
+  text-align: center;
+  flex: 0 0 auto;
 }
 
 .portal-nav a:hover,

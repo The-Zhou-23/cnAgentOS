@@ -364,7 +364,7 @@ class PortalWatchDeleteHandler(BaseHandler):
     @tornado.web.authenticated
     def post(self, record_id):
         WatchtowerRepository.delete_record(int(record_id), user_name=self.current_user)
-        self.redirect("/user/watch")
+        self.redirect("/portal/watch/database")
 
 
 class PortalWatchBatchDeleteHandler(BaseHandler):
@@ -372,4 +372,4 @@ class PortalWatchBatchDeleteHandler(BaseHandler):
     def post(self):
         ids = [int(i) for i in self.get_body_arguments("record_ids")]
         WatchtowerRepository.batch_delete_records(ids, user_name=self.current_user)
-        self.redirect("/user/watch")
+        self.redirect("/portal/watch/database")
